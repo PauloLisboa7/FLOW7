@@ -113,6 +113,8 @@ function renderProducts(){
     const imgSrc = (p.img && p.img.trim()) ? p.img : 'https://via.placeholder.com/500x700?text=' + encodeURIComponent(p.title);
     const card = document.createElement('div');
     card.className='card';
+    // give each card its product id so styles or links can target it
+    card.id = 'prod-' + p.id;
     card.innerHTML = `
       <button class="show-detail" data-id="${p.id}" style="border:0;background:transparent;padding:0;display:block;text-align:left;width:100%">
         <img src="${imgSrc}" alt="${p.title}" onerror="this.src='https://via.placeholder.com/500x700?text=Indisponível'" style="width:100%;height:200px;object-fit:cover;border-radius:8px;">
