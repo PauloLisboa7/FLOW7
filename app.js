@@ -16,9 +16,9 @@ const DEFAULT_PRODUCTS = [
   { id: 'bottom-004', brand: 'Eric Emanuel', category: 'Bermuda', gender: 'Masculino', title: 'Bermuda Mesh', price: 169.90, img: 'images/Bermuda Mesh.png', description: 'Bermuda de malha de poliéster de dupla camada (mesh). Acima do joelho, transpirável, leve e com cores vibrantes.' },
   { id: 'bottom-005', brand: 'Levi\'s', category: 'Jeans', gender: 'Masculino', title: 'Jeans Selvedge 501 \'93', price: 299.90, img: 'images/Jeans Selvedge.png', description: 'Jeans Levi\'s 501 com Denim rígido de 12oz a 14oz. Corte reto de inspiração vintage anos 90. Acabamento premium na ourela do tecido.' },
   // CALÇADOS (3)
-  { id: 'shoe-001', brand: 'Nike', category: 'Sneaker', gender: 'Unissex', title: 'Dunk Low', price: 549.90, img: 'images/Dunk Low.png', description: 'Dunk Low em couro liso ou camurça com solado de borracha de alta tração. Fiel ao tamanho (True to size). Um clássico atemporal do streetwear.' },
-  { id: 'shoe-002', brand: 'Converse', category: 'Sneaker', gender: 'Unissex', title: 'Chuck 70 High Top', price: 399.90, img: 'images/Chuck 70 High Top.png', description: 'Chuck 70 High Top em lona de 12oz reforçada. Solado de borracha envernizada mais alto que o All Star comum. Geralmente pede um número menor.' },
-  { id: 'shoe-003', brand: 'New Balance', category: 'Sneaker', gender: 'Unissex', title: 'New Balance 990v5', price: 649.90, img: 'images/New Balance 990v5.png', description: 'New Balance 990v5 com mix de camurça suína e mesh respirável. Amortecimento ENCAP. O ápice do "Dad Shoe" (tênis de pai) de luxo e conforto.' },
+  { id: 'shoe-001', brand: 'Nike', category: 'Sneaker', gender: 'Unissex', title: 'Dunk Low', price: 549.90, img: 'images/Dunk Low.png', description: 'Dunk Low em couro liso ou camurça com solado de borracha de alta tração. Fiel ao tamanho (True to size). Um clássico atemporal do streetwear.', sizes:['38','39','40','41','42','43'] },
+  { id: 'shoe-002', brand: 'Converse', category: 'Sneaker', gender: 'Unissex', title: 'Chuck 70 High Top', price: 399.90, img: 'images/Chuck 70 High Top.png', description: 'Chuck 70 High Top em lona de 12oz reforçada. Solado de borracha envernizada mais alto que o All Star comum. Geralmente pede um número menor.', sizes:['37','38','39','40','41','42'] },
+  { id: 'shoe-003', brand: 'New Balance', category: 'Sneaker', gender: 'Unissex', title: 'New Balance 990v5', price: 649.90, img: 'images/New Balance 990v5.png', description: 'New Balance 990v5 com mix de camurça suína e mesh respirável. Amortecimento ENCAP. O ápice do "Dad Shoe" (tênis de pai) de luxo e conforto.', sizes:['39','40','41','42','43','44'] },
   // ACESSÓRIOS (7 NOVOS)
   { id: 'acc-001', brand: 'Stüssy', category: 'Boné', gender: 'Unissex', title: 'Boné 5-Panel', price: 119.90, img: 'images/Boné 5-Panel.png', description: 'Boné 5-Panel clássico do Stüssy. Estrutura resistente, pala pré-curvada. Perfeito para completar o look streetwear.' },
   { id: 'acc-002', brand: 'Supreme', category: 'Chapéu', gender: 'Unissex', title: 'Bucket Hat', price: 159.90, img: 'images/Bucket Hat.png', description: 'Bucket Hat com logo bordado. Material resistente e confortável. Um essencial para o estilo Y2K e streetwear.' },
@@ -31,12 +31,46 @@ const DEFAULT_PRODUCTS = [
 
 const CART_KEY = 'flow7_cart_v1';
 const COUPON_CODE = 'ALMICEA';
-const COUPON_DISCOUNT = 0.20;
+const COUPON_DISCOUNT = 0.30; // 30% off when the valid coupon is applied
 
 let state = {
   cart: loadCart(),
   coupon: null
 };
+
+// state to remember product being added from card
+let pendingAddId = null;
+
+// helper to get size options for a product
+function getSizeOptions(prod){
+  if(prod && prod.sizes && prod.sizes.length) return prod.sizes.slice();
+  return ['P','M','G','GG'];
+}
+
+// show simple size picker modal for direct-add
+function openSizeModal(productId){
+  pendingAddId = productId;
+  const modal = document.getElementById('size-modal');
+  const sizeSelect = document.getElementById('size-select');
+  if(sizeSelect){
+    // populate options dynamically
+    sizeSelect.innerHTML = '';
+    const opts = getSizeOptions(PRODUCTS_MAP[productId] || {});
+    sizeSelect.appendChild(new Option('Escolha',''));
+    opts.forEach(s=> sizeSelect.appendChild(new Option(s,s)));
+  }
+  if(modal){
+    modal.setAttribute('aria-hidden','false');
+  }
+}
+
+// close size modal
+function closeSizeModal(){
+  const modal = document.getElementById('size-modal');
+  if(modal) modal.setAttribute('aria-hidden','true');
+  pendingAddId = null;
+}
+
 
 function saveCart(){localStorage.setItem(CART_KEY, JSON.stringify(state.cart))}
 function loadCart(){try{return JSON.parse(localStorage.getItem(CART_KEY))||[]}catch(e){return []}}
@@ -88,6 +122,8 @@ function renderProducts(){
       <button class="add" data-id="${p.id}">Adicionar</button>
     `;
     el.appendChild(card);
+    // animate appearance
+    setTimeout(()=>{ card.classList.add('visible'); }, 50);
   })
 }
 
@@ -107,6 +143,15 @@ async function showProductDetail(id){
     document.getElementById('product-brand').textContent = p.brand;
     document.getElementById('product-price').textContent = formatPrice(p.price);
     document.getElementById('product-desc').textContent = p.description || '';
+    // populate size dropdown according to product
+    const sizeEl = document.getElementById('product-size');
+    if(sizeEl){
+      sizeEl.innerHTML = '';
+      const opts = getSizeOptions(p);
+      sizeEl.appendChild(new Option('Escolha',''));
+      opts.forEach(s=> sizeEl.appendChild(new Option(s,s)));
+      sizeEl.value = '';
+    }
     const modal = document.getElementById('product-modal');
     modal.setAttribute('aria-hidden','false');
     document.getElementById('product-add').dataset.id = id;
@@ -124,13 +169,16 @@ async function showProductDetail(id){
       document.getElementById('product-price').textContent = formatPrice(p.price);
       document.getElementById('product-desc').textContent = p.description || '';
       const modal = document.getElementById('product-modal');
+      // reset size dropdown even in fallback
+      const sizeEl = document.getElementById('product-size');
+      if(sizeEl) sizeEl.value = '';
       modal.setAttribute('aria-hidden','false');
       document.getElementById('product-add').dataset.id = id;
     }
   }
 }
 
-async function addToCart(productId){
+async function addToCart(productId, size){
   let prod = PRODUCTS_MAP[productId];
   if(!prod){
     try{
@@ -139,21 +187,29 @@ async function addToCart(productId){
       PRODUCTS_MAP[productId] = prod;
     }catch(e){console.error(e);return}
   }
-  const existing = state.cart.find(i=>i.id===productId);
-  if(existing) existing.qty += 1; else state.cart.push({id:prod.id,title:prod.title,price:prod.price,img:prod.img,qty:1});
+  // match by id AND size so different sizes are separate
+  const existing = state.cart.find(i=>i.id===productId && i.size===size);
+  if(existing) existing.qty += 1;
+  else state.cart.push({id:prod.id,title:prod.title,price:prod.price,img:prod.img,qty:1,size:size||''});
+  // bump cart button
+  const cartBtn = document.getElementById('cart-btn');
+  if(cartBtn){
+    cartBtn.classList.add('bump');
+    setTimeout(()=>{cartBtn.classList.remove('bump');},500);
+  }
   saveCart();
   renderCartCount();
 }
 
-function removeFromCart(productId){
-  const idx = state.cart.findIndex(i=>i.id===productId);
+function removeFromCart(productId,size){
+  const idx = state.cart.findIndex(i=>i.id===productId && i.size===size);
   if(idx > -1) state.cart.splice(idx, 1);
   saveCart();
   renderCart();
 }
 
-function updateQty(productId, delta){
-  const item = state.cart.find(i=>i.id===productId);
+function updateQty(productId, delta, size){
+  const item = state.cart.find(i=>i.id===productId && i.size===size);
   if(item){
     item.qty = Math.max(1, item.qty + delta);
     saveCart();
@@ -181,15 +237,15 @@ function renderCart(){
     div.innerHTML = `
       <img src="${item.img}" alt="">
       <div style="flex:1">
-        <div style="font-size:14px;font-weight:600">${item.title}</div>
+        <div style="font-size:14px;font-weight:600">${item.title}${item.size? ' ('+item.size+')':''}</div>
         <div style="font-size:12px;color:var(--text-muted)">${formatPrice(item.price)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button onclick="updateQty('${item.id}',-1)" style="width:28px;height:28px;border:1px solid var(--border);background:transparent;cursor:pointer">−</button>
+        <button onclick="updateQty('${item.id}',-1,'${item.size}')" style="width:28px;height:28px;border:1px solid var(--border);background:transparent;cursor:pointer">−</button>
         <span style="width:30px;text-align:center;font-weight:600">${item.qty}</span>
-        <button onclick="updateQty('${item.id}',1)" style="width:28px;height:28px;border:1px solid var(--border);background:transparent;cursor:pointer">+</button>
+        <button onclick="updateQty('${item.id}',1,'${item.size}')" style="width:28px;height:28px;border:1px solid var(--border);background:transparent;cursor:pointer">+</button>
       </div>
-      <button onclick="removeFromCart('${item.id}')" style="width:28px;height:28px;border:1px solid var(--border);background:#c8102e;color:white;cursor:pointer;border-radius:4px">×</button>
+      <button onclick="removeFromCart('${item.id}','${item.size}')" style="width:28px;height:28px;border:1px solid var(--border);background:#c8102e;color:white;cursor:pointer;border-radius:4px">×</button>
     `;
     el.appendChild(div);
   });
@@ -230,8 +286,13 @@ function checkout(){
   saveCart();
   renderCart();
   renderCartCount();
-  alert('OBRIGADO POR ASSISTIR A NOSSA APRESENTAÇÃO');
+  // hide cart and show thank-you overlay
   document.getElementById('cart-modal').setAttribute('aria-hidden','true');
+  const thank = document.getElementById('thankyou-modal');
+  if(thank){
+    thank.setAttribute('aria-hidden','false');
+    setTimeout(()=>{ thank.setAttribute('aria-hidden','true'); }, 5000);
+  }
 }
 
 // Event delegation para produtos dinâmicos
@@ -241,9 +302,37 @@ document.body.addEventListener('click', (e)=>{
     showProductDetail(id);
   }
   if(e.target.closest('.add')){
-    addToCart(e.target.closest('.add').dataset.id);
+    const btn = e.target.closest('.add');
+    const id = btn.dataset.id;
+    if(btn.id === 'product-add'){
+      // from detail modal
+      const size = document.getElementById('product-size')?.value || '';
+      if(!size){
+        alert('Por favor, escolha um tamanho');
+        return;
+      }
+      addToCart(id, size);
+    } else {
+      // from card — open size modal
+      openSizeModal(id);
+    }
   }
 });
+
+// size modal buttons
+const sizeConfirm = document.getElementById('size-confirm');
+if(sizeConfirm){
+  sizeConfirm.addEventListener('click', ()=>{
+    const size = document.getElementById('size-select')?.value || '';
+    if(!size){
+      alert('Por favor, escolha um tamanho');
+      return;
+    }
+    addToCart(pendingAddId,size);
+    closeSizeModal();
+  });
+}
+// sizeCancel listener no longer needed; handled by delegation above
 
 // Abrir/Fechar modais
 ['product-modal','cart-modal'].forEach(id=>{
@@ -253,15 +342,19 @@ document.body.addEventListener('click', (e)=>{
 });
 
 document.getElementById('cart-btn')?.addEventListener('click',()=>{
+  renderCart(); // refresh contents before showing
   document.getElementById('cart-modal').setAttribute('aria-hidden','false');
 });
 
-document.getElementById('product-close')?.addEventListener('click',()=>{
-  document.getElementById('product-modal').setAttribute('aria-hidden','true');
-});
-
-document.getElementById('cart-close')?.addEventListener('click',()=>{
-  document.getElementById('cart-modal').setAttribute('aria-hidden','true');
+// globally handle any close button inside a modal (delegation ensures no duplicates)
+document.body.addEventListener('click', e => {
+  const btn = e.target.closest('.close');
+  if(!btn) return;
+  // find nearest ancestor that is a modal container
+  const modal = btn.closest('.product-modal, .cart-modal, #size-modal');
+  if(modal) modal.setAttribute('aria-hidden','true');
+  // reset pending addition if size modal closed
+  if(btn.id === 'size-cancel') pendingAddId = null;
 });
 
 document.getElementById('coupon-btn')?.addEventListener('click',applyCoupon);
@@ -271,3 +364,19 @@ document.getElementById('checkout-btn')?.addEventListener('click',checkout);
 // Inicializar
 fetchProducts();
 renderCartCount();
+renderCart(); // show persisted cart if user opens modal later
+
+// smooth scrolling for footer links (ensures "Início" and "Produtos" behave differently)
+document.addEventListener('DOMContentLoaded', () => {
+  const topLink = document.querySelector('a[href="#top"]');
+  const prodLink = document.querySelector('a[href="#products"]');
+  if(topLink) topLink.addEventListener('click', e=>{
+    e.preventDefault();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+  if(prodLink) prodLink.addEventListener('click', e=>{
+    e.preventDefault();
+    const el = document.getElementById('products');
+    if(el) el.scrollIntoView({behavior:'smooth'});
+  });
+});

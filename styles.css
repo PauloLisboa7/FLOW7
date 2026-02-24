@@ -3,23 +3,34 @@
   --card:#111111;
   --accent:#e6e6e6;
   --muted:#bdbdbd;
-  --primary:#1e90ff;
+  /* primary now neutral gray to match dark aesthetic */
+  --primary:#888888;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:linear-gradient(180deg,#050505,var(--bg));color:var(--accent);-webkit-font-smoothing:antialiased}
-.site-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:transparent}
-.logo{height:48px}
-.cart-btn{background:#fff;color:#000;border-radius:8px;padding:8px 12px;border:0;font-weight:600}
+.site-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:transparent;position:relative}
+.logo{position:absolute;left:50%;transform:translateX(-50%);}
+.logo{height:48px;/* centered by absolute positioning */}
+.cart-btn{background:#fff;color:#000;border-radius:8px;padding:8px 12px;border:0;font-weight:600;position:relative;transition:transform 0.2s;margin-left:auto}
+.cart-btn.bump{animation:bump 0.5s ease-out}
+@keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
 .container{padding:16px}
 .hero{margin-bottom:12px}
 .hero h1{margin:0;font-size:22px}
 .hero p{margin:4px 0 0;color:var(--muted)}
 .products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.card{background:var(--card);padding:10px;border-radius:10px}
-.card img{width:100%;height:140px;object-fit:cover;border-radius:8px}
-.product-title{font-size:14px;margin:8px 0 4px}
-.price{font-weight:700}
-.add{margin-top:8px;background:var(--primary);border:0;color:#fff;padding:8px;border-radius:8px;width:100%}
+.card{background:var(--card);padding:10px;border-radius:10px;transition:transform 0.2s,box-shadow 0.2s;opacity:0;transform:translateY(20px)}
+.card.visible{opacity:1;transform:translateY(0)}
+.card:hover{transform:scale(1.03);box-shadow:0 4px 12px rgba(0,0,0,0.4)}
+.card img{width:100%;height:140px;object-fit:cover;border-radius:8px;transition:transform 0.3s}
+.card:hover img{transform:scale(1.05)}
+.product-title{font-size:14px;margin:8px 0 4px;color:var(--accent);transition:color 0.2s}
+.card:hover .product-title{color:var(--primary)}
+.price{font-weight:700;transition:color 0.2s}
+.card:hover .price{color:var(--primary)}
+.add{margin-top:8px;background:var(--primary);border:0;color:#fff;padding:8px;border-radius:8px;width:100%;cursor:pointer;transition:background 0.2s,transform 0.1s}
+.add:active{transform:scale(0.98)}
+.add:hover{background:darken(var(--primary),10%)}
 
 .cart-modal{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:linear-gradient(transparent,rgba(0,0,0,0.6))}
 .cart-modal[aria-hidden="false"]{display:flex}
@@ -40,9 +51,7 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial
 }
 
 /* Footer styles inspired by modelo fornecido */
-.site-footer{margin-top:20px}
-.site-footer .promo{background:#c8102e;color:#fff;text-align:center;padding:12px 8px;font-weight:700}
-.site-footer .footer-main{background:#000;display:flex;align-items:center;justify-content:space-between;padding:18px 16px}
+/* legacy footer initial styles removed; updated later in file */
 .footer-logo{height:56px}
 .icon-btn{background:transparent;border:0;color:#fff;font-size:20px}
 .footer-icons{display:flex;gap:12px;align-items:center}
@@ -60,14 +69,57 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial
 .promo-bar{background:#c8102e;color:#fff;text-align:center;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;font-size:12px;line-height:1}
 
 /* Product detail modal */
-.product-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);padding:20px}
+.product-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);padding:20px;opacity:0;transition:opacity 0.2s}
+.product-modal[aria-hidden="false"]{display:flex;opacity:1}
 .product-modal[aria-hidden="false"]{display:flex}
 .product-panel{background:#0f0f0f;padding:12px;border-radius:12px;max-width:900px;width:100%}
 .product-content{display:flex;gap:12px;align-items:flex-start}
 .product-content img{width:48%;height:auto;border-radius:8px;object-fit:cover}
 .product-info{flex:1}
-.product-info h3{margin:0 0 6px}
+.product-info h3{margin:0 0 6px;color:var(--accent)}
 .product-desc{color:var(--muted);margin-top:8px}
 .product-info .price{font-weight:800;margin-top:8px}
 .product-panel .close{float:right}
 .product-panel .add{margin-top:12px}
+
+/* size selector dark theme */
+.size-row label{color:var(--accent)}
+.size-row select{width:100%;padding:8px;border-radius:8px;border:1px solid #222;background:var(--card);color:var(--accent);font-size:14px}
+.size-row select option{background:var(--card);color:var(--accent)}
+
+/* thank-you modal */
+.thankyou-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);backdrop-filter:blur(4px);z-index:1000}
+.thankyou-modal[aria-hidden="false"]{display:flex}
+.thankyou-panel{background:var(--bg); /* dark background */
+  color:#fff;padding:32px 40px;border-radius:16px;max-width:400px;text-align:center;
+  animation:zoom-in 0.4s ease-out,pulse 1.2s ease-in-out 0.4s infinite;
+  box-shadow:0 8px 24px rgba(0,0,0,0.6);
+  position:relative;
+}
+
+/* new footer styles */
+.site-footer{margin-top:32px;background:#2a2a2a;color:var(--accent);border-top:1px solid #444;padding-top:16px}
+.footer-main{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-start;padding:24px 16px}
+.footer-left{flex:1;min-width:200px}
+.contact-block{display:flex;flex-direction:column;gap:8px}
+.footer-title{font-weight:700;text-transform:uppercase;letter-spacing:0.5px;font-size:14px;color:var(--accent)}
+.contact-info p{margin:2px 0;font-size:14px}
+.footer-links{display:flex;flex-direction:column;gap:8px;justify-content:center;flex:2}
+.footer-links a{color:var(--accent);font-size:14px;text-decoration:none;padding:4px 8px;border-radius:4px;transition:background 0.2s}
+.footer-links a:hover{background:#3a3a3a}
+.whatsapp-link{color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.whatsapp-link svg{vertical-align:middle}
+
+/* floating whatsapp icon */
+#whatsapp-float{position:fixed;bottom:24px;right:24px;width:48px;height:48px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000}
+#whatsapp-float:hover{transform:scale(1.1);transition:transform 0.2s}
+#whatsapp-float svg{width:28px;height:28px}
+.footer-links a:hover{text-decoration:underline}
+
+.thankyou-logo{margin-top:16px;width:120px;opacity:0.9}
+.thankyou-panel::before{content:"🎉";font-size:48px;position:absolute;top:-24px;left:50%;transform:translateX(-50%)}
+.thankyou-panel h2{margin:0;font-size:24px;line-height:1.2}
+.thankyou-panel p{margin-top:12px;color:#f0f0f0;font-size:16px}
+
+@keyframes zoom-in{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
