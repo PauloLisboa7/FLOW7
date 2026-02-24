@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FLOW7 — Loja</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="promo-bar">FRETE GRÁTIS P/ TODOS OS ALUNOS DO SENAC MA</div>
+    <header class="site-header">
+      <img src="flow7%20logo.png" alt="FLOW7" class="logo" />
+      <button id="btn-cart" class="cart-btn">Carrinho (<span id="cart-count">0</span>)</button>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <h1>FLOW7</h1>
+        <p>Roupas masculinas e femininas — Nike & Adidas</p>
+      </section>
+
+      <section id="products" class="products">
+        <!-- produtos injetados por JS -->
+      </section>
+    </main>
+
+    <!-- Modal de detalhe do produto -->
+    <div id="product-modal" class="product-modal" aria-hidden="true">
+      <div class="product-panel">
+        <button id="close-product" class="close">×</button>
+        <div class="product-content">
+          <img id="product-img" src="" alt="" />
+          <div class="product-info">
+            <h3 id="product-title"></h3>
+            <div id="product-brand" class="muted"></div>
+            <div id="product-price" class="price"></div>
+            <p id="product-desc" class="product-desc"></p>
+            <button id="product-add" class="add">Adicionar ao carrinho</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="cart-modal" class="cart-modal" aria-hidden="true">
+      <div class="cart-panel">
+        <button id="close-cart" class="close">×</button>
+        <h2>Seu carrinho</h2>
+        <div id="cart-items"></div>
+
+        <div class="coupon-row">
+          <input id="coupon" placeholder="Código do cupom" />
+          <button id="apply-coupon">Aplicar</button>
+        </div>
+
+        <div class="summary">
+          <div>Subtotal: <span id="subtotal">R$0,00</span></div>
+          <div>Desconto: <span id="discount">R$0,00</span></div>
+          <div class="total">Total: <span id="total">R$0,00</span></div>
+        </div>
+
+        <button id="checkout" class="checkout">Finalizar compra</button>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
