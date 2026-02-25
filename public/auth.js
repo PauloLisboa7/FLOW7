@@ -28,10 +28,20 @@ function closeAuthModal() {
 }
 
 function showAuthForm(formName) {
+  // Hide main auth forms
   document.getElementById('login-form')?.style.setProperty('display', 'none');
   document.getElementById('signup-form')?.style.setProperty('display', 'none');
   document.getElementById('forgot-form')?.style.setProperty('display', 'none');
-  
+  // Also hide verify panel if present
+  document.getElementById('verify-panel')?.style.setProperty('display', 'none');
+
+  // Support both "<name>-form" ids and special 'verify' panel
+  if (formName === 'verify') {
+    const vp = document.getElementById('verify-panel');
+    if (vp) vp.style.display = 'block';
+    return;
+  }
+
   const formId = formName + '-form';
   const form = document.getElementById(formId);
   if (form) {
@@ -71,9 +81,19 @@ function validatePassword(password) {
   return password && password.length >= 6;
 }
 
+// Helper to get prefix based on page context
+function getFormPrefix(baseFormType) {
+  // If we're on the auth.html page, use "page-" prefix
+  if (location.pathname.endsWith('auth.html')) {
+    return `page-${baseFormType}`;
+  }
+  return baseFormType;
+}
+
 // Show error message
 function showAuthError(formType, message) {
-  const errorEl = document.getElementById(`${formType}-error`);
+  const prefix = getFormPrefix(formType);
+  const errorEl = document.getElementById(`${prefix}-error`);
   if (errorEl) {
     errorEl.textContent = message;
     errorEl.classList.add('show');
@@ -86,7 +106,8 @@ function showAuthError(formType, message) {
 
 // Show success message
 function showAuthSuccess(formType, message) {
-  const successEl = document.getElementById(`${formType}-success`);
+  const prefix = getFormPrefix(formType);
+  const successEl = document.getElementById(`${prefix}-success`);
   if (successEl) {
     successEl.textContent = message;
     successEl.classList.add('show');
@@ -99,8 +120,9 @@ function showAuthSuccess(formType, message) {
 
 // Show loading state
 function showAuthLoading(formType, show = true) {
-  const loadingEl = document.getElementById(`${formType}-loading`);
-  const btnId = `${formType}-btn`;
+  const prefix = getFormPrefix(formType);
+  const loadingEl = document.getElementById(`${prefix}-loading`);
+  const btnId = `${prefix}-btn`;
   const btn = document.getElementById(btnId);
   
   if (loadingEl) {
@@ -122,6 +144,10 @@ function showAuthLoading(formType, show = true) {
 
 // Login function
 async function handleLogin(email, password) {
+  if (typeof firebase === 'undefined') {
+    showAuthError('login', '❌ Serviço indisponível. Aguarde e tente novamente.');
+    return;
+  }
   // Validar campo vazio
   if (!email || email.trim() === '') {
     showAuthError('login', '⚠️ Por favor, insira seu e-mail');
@@ -176,6 +202,11 @@ async function handleLogin(email, password) {
 
 // Signup function
 async function handleSignup(name, email, phone, password, confirm) {
+  console.log('🔐 handleSignup chamado', { name, email, phone });
+  if (typeof firebase === 'undefined') {
+    showAuthError('signup', '❌ Serviço indisponível. Aguarde e tente novamente.');
+    return;
+  }
   // Validar nome
   if (!name || name.trim() === '') {
     showAuthError('signup', '⚠️ Por favor, insira seu nome completo');
@@ -225,6 +256,15 @@ async function handleSignup(name, email, phone, password, confirm) {
     const result = await firebase.auth().createUserWithEmailAndPassword(email.trim(), password);
     currentUser = result.user;
     
+    // Update Firebase Auth profile displayName (so templates can use it)
+    try {
+      if (currentUser && typeof currentUser.updateProfile === 'function') {
+        await currentUser.updateProfile({ displayName: name.trim() });
+      }
+    } catch (updErr) {
+      console.warn('⚠️ Não foi possível atualizar displayName:', updErr);
+    }
+
     // Save user profile to Firestore
     if (typeof firebase !== 'undefined' && firebase.firestore) {
       const db = firebase.firestore();
@@ -238,11 +278,33 @@ async function handleSignup(name, email, phone, password, confirm) {
     }
     
     console.log('✅ Conta criada com sucesso:', currentUser.email);
-    showAuthSuccess('signup', '✅ Conta criada com sucesso! Bem-vindo à FLOW7!');
+    showAuthSuccess('signup', '✅ Conta criada com sucesso! Enviando e-mail de verificação...');
+
+    // Send verification email and show the verify panel
+    try {
+        if (currentUser && typeof currentUser.sendEmailVerification === 'function') {
+        await currentUser.sendEmailVerification();
+        // Populate verify panel and show it via showAuthForm for consistency
+        const verifyEmailEl = document.getElementById('verify-email-text');
+        // Preferir o e-mail do usuário autenticado (mais confiável)
+        const resolvedEmail = (currentUser && currentUser.email) ? currentUser.email : (email && email.trim() ? email.trim() : '');
+        if (verifyEmailEl) verifyEmailEl.textContent = resolvedEmail;
+
+        showAuthForm('verify');
+
+        showAuthSuccess('verify', '✅ E-mail de verificação enviado! Verifique sua caixa de entrada.');
+      } else {
+        showAuthError('signup', '❌ Não foi possível enviar o e-mail de verificação. Faça login e solicite o reenvio.');
+      }
+    } catch (verErr) {
+      console.error('❌ Erro ao enviar e-mail de verificação:', verErr);
+      showAuthError('verify', '❌ Erro ao enviar e-mail de verificação. Tente novamente mais tarde.');
+    }
+
+    // Refresh user profile display
     setTimeout(() => {
-      closeAuthModal();
       updateUserProfile();
-    }, 1500);
+    }, 800);
   } catch (error) {
     console.error('❌ Erro ao criar conta:', error);
     let message = 'Erro ao criar conta';
@@ -267,19 +329,31 @@ async function handleSignup(name, email, phone, password, confirm) {
 
 // Forgot password function
 async function handleForgotPassword(email) {
+  if (typeof firebase === 'undefined') {
+    showAuthError('forgot', '❌ Serviço indisponível. Aguarde e tente novamente.');
+    return;
+  }
   if (!email || email.trim() === '') {
     showAuthError('forgot', '⚠️ Por favor, insira seu e-mail');
     return;
   }
-  
+
   if (!validateEmail(email)) {
     showAuthError('forgot', '❌ E-mail inválido. Use o formato correto.');
     return;
   }
-  
+
   showAuthLoading('forgot', true);
-  
+
   try {
+    // Verificar se o e-mail está cadastrado antes de enviar o e-mail de recuperação
+    const methods = await firebase.auth().fetchSignInMethodsForEmail(email.trim());
+    if (!methods || methods.length === 0) {
+      showAuthError('forgot', '❌ E-mail não cadastrado. Verifique ou crie uma nova conta.');
+      return;
+    }
+
+    // Se existem métodos, enviamos o e-mail de redefinição
     await firebase.auth().sendPasswordResetEmail(email.trim());
     console.log('✅ E-mail de recuperação enviado para:', email);
     showAuthSuccess('forgot', '✅ E-mail de redefinição de senha enviado com sucesso! Verifique sua caixa de entrada (e itens de spam).');
@@ -288,17 +362,20 @@ async function handleForgotPassword(email) {
       showAuthForm('login');
     }, 4000);
   } catch (error) {
-    console.error('❌ Erro ao enviar e-mail:', error);
+    console.error('❌ Erro ao verificar/enviar e-mail:', error);
     let message = 'Erro ao enviar e-mail';
-    
-    if (error.code === 'auth/user-not-found') {
-      message = '❌ E-mail não encontrado. Verifique ou crie uma nova conta.';
-    } else if (error.code === 'auth/invalid-email') {
+
+    if (error.code === 'auth/invalid-email') {
       message = '❌ E-mail inválido';
     } else if (error.code === 'auth/too-many-requests') {
       message = '⚠️ Muitas tentativas. Tente novamente em alguns minutos.';
+    } else if (error.code === 'auth/user-not-found') {
+      // fallback
+      message = '❌ E-mail não cadastrado. Verifique ou crie uma nova conta.';
+    } else if (error.message) {
+      message = error.message;
     }
-    
+
     showAuthError('forgot', message);
   } finally {
     showAuthLoading('forgot', false);
@@ -401,6 +478,7 @@ function setupAuthEventListeners() {
   
   // Signup form
   document.getElementById('signup-btn')?.addEventListener('click', () => {
+    console.log('👆 signup-btn clicado');
     const name = (document.getElementById('signup-name') || {}).value || '';
     const email = (document.getElementById('signup-email') || {}).value || '';
     const phone = (document.getElementById('signup-phone') || {}).value || '';
@@ -410,7 +488,8 @@ function setupAuthEventListeners() {
   });
   
   // Forgot password form
-  document.getElementById('forgot-btn')?.addEventListener('click', () => {
+  document.getElementById('forgot-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
     const email = document.getElementById('forgot-email')?.value || '';
     handleForgotPassword(email);
   });
@@ -425,26 +504,69 @@ function setupAuthEventListeners() {
   // Form navigation links
   document.getElementById('to-signup-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    clearAuthForms();
-    showAuthForm('signup');
+    // If already on dedicated auth page, switch panels; otherwise navigate
+    if (location.pathname.endsWith('auth.html')) {
+      clearAuthForms();
+      showAuthForm('signup');
+    } else {
+      window.location.href = 'auth.html?form=signup';
+    }
   });
   
   document.getElementById('to-login-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    clearAuthForms();
-    showAuthForm('login');
+    if (location.pathname.endsWith('auth.html')) {
+      clearAuthForms();
+      showAuthForm('login');
+    } else {
+      window.location.href = 'auth.html?form=login';
+    }
   });
   
   document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    clearAuthForms();
-    showAuthForm('forgot');
+    if (location.pathname.endsWith('auth.html')) {
+      clearAuthForms();
+      showAuthForm('forgot');
+    } else {
+      window.location.href = 'auth.html?form=forgot';
+    }
   });
   
   document.getElementById('back-to-login-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    clearAuthForms();
-    showAuthForm('login');
+    if (location.pathname.endsWith('auth.html')) {
+      clearAuthForms();
+      showAuthForm('login');
+    } else {
+      window.location.href = 'auth.html?form=login';
+    }
+  });
+
+  // Resend verification link
+  document.getElementById('resend-verification-link')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    showAuthLoading('verify', true);
+    try {
+      const user = firebase.auth().currentUser;
+      // Ensure verify email text is populated for UX clarity
+      const verifyEmailEl = document.getElementById('verify-email-text');
+      if (verifyEmailEl && (!verifyEmailEl.textContent || verifyEmailEl.textContent.trim() === '')) {
+        const fallback = (user && user.email) ? user.email : (document.getElementById('signup-email')?.value || '');
+        verifyEmailEl.textContent = fallback;
+      }
+      if (user && typeof user.sendEmailVerification === 'function') {
+        await user.sendEmailVerification();
+        showAuthSuccess('verify', '✅ Link de verificação reenviado com sucesso! Verifique sua caixa de entrada.');
+      } else {
+        showAuthError('verify', '❌ Usuário não autenticado. Faça login e tente novamente.');
+      }
+    } catch (err) {
+      console.error('❌ Erro ao reenviar verificação:', err);
+      showAuthError('verify', '❌ Não foi possível reenviar o link. Tente novamente mais tarde.');
+    } finally {
+      showAuthLoading('verify', false);
+    }
   });
   
   // User profile button
@@ -457,8 +579,8 @@ function setupAuthEventListeners() {
         handleLogout();
       }
     } else {
-      console.log('🎯 Abrindo modal de login...');
-      openAuthModal('login');
+      // Navigate to dedicated auth page
+      window.location.href = 'auth.html?form=login';
     }
   });
   
