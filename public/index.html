@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>FLOW7 — Loja</title>
     <!-- add version parameter to bust cache on updates -->
-    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=3" />
     <!-- Firebase SDK -->
     <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js"></script>
@@ -124,6 +124,120 @@
       </div>
     </div>
 
+    <!-- Auth Modals -->
+    <!-- Login Modal -->
+    <div id="auth-modal" class="auth-modal" aria-hidden="true">
+      <div class="auth-panel">
+        <button id="auth-close" class="close">×</button>
+        
+        <!-- Login Form -->
+        <div id="login-form" class="auth-form">
+          <div class="breadcrumb">Início > Minha Conta > Login</div>
+          <h2>Iniciar sessão</h2>
+          
+          <div class="form-group">
+            <label for="login-email">E-mail</label>
+            <input type="email" id="login-email" placeholder="ex.: seuemail@email.com.br" />
+          </div>
+          
+          <div class="form-group">
+            <label for="login-password">Senha</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="login-password" placeholder="ex.: suasenha" />
+              <button type="button" id="toggle-password" class="toggle-password" title="Mostrar/ocultar senha">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="form-footer">
+            <a href="#" id="forgot-password-link" class="link">Esqueceu a senha?</a>
+          </div>
+          
+          <button id="login-btn" class="auth-btn">Iniciar sessão</button>
+          
+          <div class="form-footer">
+            Não possui uma conta ainda? <a href="#" id="to-signup-link" class="link">Criar uma conta</a>
+          </div>
+          
+          <div id="login-error" class="auth-error"></div>
+          <div id="login-loading" class="auth-loading"></div>
+        </div>
+        
+        <!-- Signup Form -->
+        <div id="signup-form" class="auth-form" style="display:none">
+          <div class="breadcrumb">Início > Minha Conta > Registrar</div>
+          <h2>Criar uma conta</h2>
+          
+          <div class="form-group">
+            <label for="signup-email">E-mail</label>
+            <input type="email" id="signup-email" placeholder="ex.: seuemail@email.com.br" />
+          </div>
+          
+          <div class="form-group">
+            <label for="signup-password">Senha</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="signup-password" placeholder="ex.: suasenha" />
+              <button type="button" id="toggle-signup-password" class="toggle-password" title="Mostrar/ocultar senha">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="signup-confirm">Confirmar senha</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="signup-confirm" placeholder="Confirme sua senha" />
+              <button type="button" id="toggle-confirm-password" class="toggle-password" title="Mostrar/ocultar senha">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <button id="signup-btn" class="auth-btn">Criar conta</button>
+          
+          <div class="form-footer">
+            Já possui uma conta? <a href="#" id="to-login-link" class="link">Iniciar sessão</a>
+          </div>
+          
+          <div id="signup-error" class="auth-error"></div>
+          <div id="signup-loading" class="auth-loading"></div>
+        </div>
+        
+        <!-- Forgot Password Form -->
+        <div id="forgot-form" class="auth-form" style="display:none">
+          <div class="breadcrumb">Início > Minha Conta > Recuperar Senha</div>
+          <h2>Esqueceu a senha?</h2>
+          
+          <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">Insira seu e-mail e enviaremos um link para redefinir sua senha.</p>
+          
+          <div class="form-group">
+            <label for="forgot-email">E-mail</label>
+            <input type="email" id="forgot-email" placeholder="ex.: seuemail@email.com.br" />
+          </div>
+          
+          <button id="forgot-btn" class="auth-btn">Enviar link</button>
+          
+          <div class="form-footer">
+            <a href="#" id="back-to-login-link" class="link">Voltar para login</a>
+          </div>
+          
+          <div id="forgot-error" class="auth-error"></div>
+          <div id="forgot-success" class="auth-success"></div>
+          <div id="forgot-loading" class="auth-loading"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Site footer with contact and links -->
     <!-- floating whatsapp button -->
     <a href="https://wa.me/559898999621664" id="whatsapp-float" target="_blank" title="Fale conosco pelo WhatsApp">
@@ -169,8 +283,67 @@
     </footer>
 
     <script>
+      // Debug script - remove after fixing
+      console.log('🚀 Iniciando página...');
+      console.log('📄 DOM Status:', document.readyState);
+      
+      // Force modal opening on user button click
+      function forceModalOpen() {
+        const userBtn = document.getElementById('user-btn');
+        const modal = document.getElementById('auth-modal');
+        
+        if (!userBtn || !modal) {
+          console.log('⏳ Elementos não prontos, tentando novamente...');
+          setTimeout(forceModalOpen, 100);
+          return;
+        }
+        
+        console.log('✅ Elementos encontrados! Adicionando listener...');
+        
+        userBtn.addEventListener('click', function(e) {
+          console.log('👆 USER BUTTON CLICKED!');
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Force modal to be visible
+          modal.setAttribute('aria-hidden', 'false');
+          modal.style.display = 'flex !important';
+          modal.style.visibility = 'visible';
+          modal.style.zIndex = '9999';
+          
+          // Show login form
+          const loginForm = document.getElementById('login-form');
+          if (loginForm) {
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('forgot-form').style.display = 'none';
+            loginForm.style.display = 'block';
+          }
+          
+          console.log('✅ MODAL SHOULD BE VISIBLE NOW');
+        });
+        
+        console.log('✅ Event listener attached to user button');
+      }
+      
+      // Execute immediately
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', forceModalOpen);
+      } else {
+        forceModalOpen();
+      }
+      
+      window.addEventListener('DOMContentLoaded', ()=> {
+        console.log('✅ DOMContentLoaded disparado');
+      });
+      
       // ensure product size selector styling is applied even if CSS cached
       document.addEventListener('DOMContentLoaded', function(){
+        console.log('🔍 Verificando elementos do auth...');
+        const userBtn = document.getElementById('user-btn');
+        const authModal = document.getElementById('auth-modal');
+        console.log('🔘 User button:', userBtn ? '✅ ENCONTRADO' : '❌ NÃO ENCONTRADO');
+        console.log('🎭 Auth modal:', authModal ? '✅ ENCONTRADO' : '❌ NÃO ENCONTRADO');
+        
         const sizeSelect = document.getElementById('product-size');
         if(sizeSelect){
           sizeSelect.style.background='#111';
@@ -179,6 +352,7 @@
         }
       });
     </script>
+    <script src="auth.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
