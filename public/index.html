@@ -395,6 +395,25 @@
           });
         }
         
+        // Setup close button
+        const authCloseBtn = document.getElementById('auth-close');
+        if (authCloseBtn) {
+          authCloseBtn.addEventListener('click', function(e) {
+            console.log('❌ AUTH CLOSE BUTTON CLICKED!');
+            e.preventDefault();
+            e.stopPropagation();
+            // Hide modal
+            modal.setAttribute('aria-hidden', 'true');
+            modal.style.display = 'none';
+            // Reset to login form
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('forgot-form').style.display = 'none';
+            // Clear forms
+            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
+          });
+        }
+        
         console.log('✅ Event listeners attached successfully');
       }
       
