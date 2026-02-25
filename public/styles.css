@@ -9,7 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&display=swap');
 *{box-sizing:border-box}
 body{margin:0;font-family:'Poppins',system-ui,sans-serif;background:linear-gradient(180deg,#050505,var(--bg));color:var(--accent);-webkit-font-smoothing:antialiased;padding-top:160px}
-.promo-bar{position:fixed;top:0;left:0;right:0;background:#c8102e;color:#fff;text-align:center;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;font-size:12px;line-height:1;z-index:1000;font-family:'Poppins',sans-serif}
+.promo-bar{position:fixed;top:0;left:0;right:0;background:#c8102e;color:#fff;text-align:center;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;font-size:12px;line-height:1.4;z-index:1000;font-family:'Poppins',sans-serif;min-height:30px;height:30px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .site-header{position:fixed;top:30px;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:16px 16px;background:#000;z-index:999;width:100%;border-bottom:1px solid #222;height:100px}
 .header-icons{display:flex;gap:16px;align-items:center}
 .header-icon-btn{background:transparent;border:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s}
@@ -176,9 +176,9 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;background:linear-gradi
 .auth-loading{margin-top:16px;text-align:center;color:var(--muted);font-size:12px;display:none}
 .auth-loading.show{display:block}
 
-.recaptcha-wrapper{margin:20px 0;display:flex;justify-content:center}
+.recaptcha-wrapper{margin:20px 0;display:flex;justify-content:center;padding:10px 0}
 
-.recaptcha-wrapper .g-recaptcha{transform:scale(0.9);transform-origin:0 0}
+.recaptcha-wrapper .g-recaptcha{display:inline-block}
 
 @media(min-width:700px){
   .auth-panel{border-radius:20px;max-width:450px}

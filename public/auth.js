@@ -59,12 +59,16 @@ function clearAuthForms() {
 
 // Form validation
 function validateEmail(email) {
+  if (!email || email.trim() === '') {
+    return false;
+  }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return emailRegex.test(email.trim()) && email.indexOf('.') > email.indexOf('@');
 }
 
 function validatePassword(password) {
-  return password.length >= 6;
+  // Mínimo 6 caracteres
+  return password && password.length >= 6;
 }
 
 // Show error message
@@ -118,23 +122,30 @@ function showAuthLoading(formType, show = true) {
 
 // Login function
 async function handleLogin(email, password) {
-  if (!validateEmail(email)) {
-    showAuthError('login', 'Por favor, insira um e-mail válido');
+  // Validar campo vazio
+  if (!email || email.trim() === '') {
+    showAuthError('login', '⚠️ Por favor, insira seu e-mail');
     return;
   }
   
-  if (!validatePassword(password)) {
-    showAuthError('login', 'Senha deve ter no mínimo 6 caracteres');
+  if (!password || password === '') {
+    showAuthError('login', '⚠️ Por favor, insira sua senha');
+    return;
+  }
+  
+  // Validar formato de e-mail
+  if (!validateEmail(email)) {
+    showAuthError('login', '❌ E-mail inválido. Verifique o formato (ex: email@dominio.com.br)');
     return;
   }
   
   showAuthLoading('login', true);
   
   try {
-    const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+    const result = await firebase.auth().signInWithEmailAndPassword(email.trim(), password);
     currentUser = result.user;
     console.log('✅ Login bem-sucedido:', currentUser.email);
-    showAuthSuccess('login', 'Login realizado com sucesso!');
+    showAuthSuccess('login', '✅ Login realizado com sucesso! Bem-vindo!');
     setTimeout(() => {
       closeAuthModal();
       updateUserProfile();
@@ -142,15 +153,21 @@ async function handleLogin(email, password) {
   } catch (error) {
     console.error('❌ Erro no login:', error);
     let message = 'Erro ao fazer login';
+    
     if (error.code === 'auth/user-not-found') {
-      message = 'E-mail não encontrado';
+      message = '❌ E-mail não encontrado. Verifique ou crie uma nova conta.';
     } else if (error.code === 'auth/wrong-password') {
-      message = 'Senha incorreta';
+      message = '❌ Senha incorreta. Tente novamente ou redefina sua senha.';
     } else if (error.code === 'auth/invalid-email') {
-      message = 'E-mail inválido';
+      message = '❌ E-mail inválido';
     } else if (error.code === 'auth/user-disabled') {
-      message = 'Conta desabilitada';
+      message = '❌ Conta desabilitada. Contate o suporte.';
+    } else if (error.code === 'auth/too-many-requests') {
+      message = '⚠️ Muitas tentativas. Tente novamente em alguns minutos.';
+    } else if (error.code === 'auth/invalid-credential') {
+      message = '❌ E-mail ou senha incorretos';
     }
+    
     showAuthError('login', message);
   } finally {
     showAuthLoading('login', false);
@@ -159,30 +176,53 @@ async function handleLogin(email, password) {
 
 // Signup function
 async function handleSignup(name, email, phone, password, confirm) {
-  if (!name || name.trim().length < 3) {
-    showAuthError('signup', 'Nome de completo deve ter no mínimo 3 caracteres');
+  // Validar nome
+  if (!name || name.trim() === '') {
+    showAuthError('signup', '⚠️ Por favor, insira seu nome completo');
+    return;
+  }
+  
+  if (name.trim().length < 3) {
+    showAuthError('signup', '❌ Nome deve ter no mínimo 3 caracteres');
+    return;
+  }
+  
+  // Validar e-mail
+  if (!email || email.trim() === '') {
+    showAuthError('signup', '⚠️ Por favor, insira seu e-mail');
     return;
   }
   
   if (!validateEmail(email)) {
-    showAuthError('signup', 'E-mail inválido');
+    showAuthError('signup', '❌ E-mail inválido. Use o formato: seu.email@dominio.com.br');
+    return;
+  }
+  
+  // Validar senhas
+  if (!password || password === '') {
+    showAuthError('signup', '⚠️ Por favor, insira uma senha');
     return;
   }
   
   if (!validatePassword(password)) {
-    showAuthError('signup', 'Senha deve ter no mínimo 6 caracteres');
+    showAuthError('signup', '❌ Senha deve ter no mínimo 6 caracteres');
+    return;
+  }
+  
+  if (!confirm || confirm === '') {
+    showAuthError('signup', '⚠️ Por favor, confirme sua senha');
     return;
   }
   
   if (password !== confirm) {
-    showAuthError('signup', 'As senhas não coincidem');
+    showAuthError('signup', '❌ As senhas não coincidem. Verifique a digitação.');
     return;
   }
   
   showAuthLoading('signup', true);
   
   try {
-    const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const result = await firebase.auth().createUserWithEmailAndPassword(email.trim(), password);
     currentUser = result.user;
     
     // Save user profile to Firestore
@@ -190,7 +230,7 @@ async function handleSignup(name, email, phone, password, confirm) {
       const db = firebase.firestore();
       await db.collection('users').doc(currentUser.uid).set({
         name: name.trim(),
-        email: email,
+        email: email.trim(),
         phone: phone || '',
         createdAt: new Date(),
         updatedAt: new Date()
@@ -198,7 +238,7 @@ async function handleSignup(name, email, phone, password, confirm) {
     }
     
     console.log('✅ Conta criada com sucesso:', currentUser.email);
-    showAuthSuccess('signup', 'Conta criada! Bem-vindo à FLOW7!');
+    showAuthSuccess('signup', '✅ Conta criada com sucesso! Bem-vindo à FLOW7!');
     setTimeout(() => {
       closeAuthModal();
       updateUserProfile();
@@ -206,15 +246,19 @@ async function handleSignup(name, email, phone, password, confirm) {
   } catch (error) {
     console.error('❌ Erro ao criar conta:', error);
     let message = 'Erro ao criar conta';
+    
     if (error.code === 'auth/email-already-in-use') {
-      message = 'E-mail já cadastrado';
+      message = '❌ Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.';
     } else if (error.code === 'auth/weak-password') {
-      message = 'Senha muito fraca';
+      message = '❌ Senha muito fraca. Use letras, números e caracteres especiais.';
     } else if (error.code === 'auth/invalid-email') {
-      message = 'E-mail inválido';
+      message = '❌ E-mail inválido';
+    } else if (error.code === 'auth/operation-not-allowed') {
+      message = '❌ Criação de conta não disponível no momento';
     } else if (error.message) {
       message = error.message;
     }
+    
     showAuthError('signup', message);
   } finally {
     showAuthLoading('signup', false);
@@ -223,29 +267,38 @@ async function handleSignup(name, email, phone, password, confirm) {
 
 // Forgot password function
 async function handleForgotPassword(email) {
+  if (!email || email.trim() === '') {
+    showAuthError('forgot', '⚠️ Por favor, insira seu e-mail');
+    return;
+  }
+  
   if (!validateEmail(email)) {
-    showAuthError('forgot', 'Por favor, insira um e-mail válido');
+    showAuthError('forgot', '❌ E-mail inválido. Use o formato correto.');
     return;
   }
   
   showAuthLoading('forgot', true);
   
   try {
-    await firebase.auth().sendPasswordResetEmail(email);
+    await firebase.auth().sendPasswordResetEmail(email.trim());
     console.log('✅ E-mail de recuperação enviado para:', email);
-    showAuthSuccess('forgot', 'E-mail de recuperação enviado com sucesso! Verifique seu e-mail.');
+    showAuthSuccess('forgot', '✅ E-mail de redefinição de senha enviado com sucesso! Verifique sua caixa de entrada (e itens de spam).');
     setTimeout(() => {
       document.getElementById('forgot-email').value = '';
       showAuthForm('login');
-    }, 3000);
+    }, 4000);
   } catch (error) {
     console.error('❌ Erro ao enviar e-mail:', error);
     let message = 'Erro ao enviar e-mail';
+    
     if (error.code === 'auth/user-not-found') {
-      message = 'E-mail não encontrado';
+      message = '❌ E-mail não encontrado. Verifique ou crie uma nova conta.';
     } else if (error.code === 'auth/invalid-email') {
-      message = 'E-mail inválido';
+      message = '❌ E-mail inválido';
+    } else if (error.code === 'auth/too-many-requests') {
+      message = '⚠️ Muitas tentativas. Tente novamente em alguns minutos.';
     }
+    
     showAuthError('forgot', message);
   } finally {
     showAuthLoading('forgot', false);
