@@ -67,7 +67,14 @@ function openSizeModal(productId){
 // close size modal
 function closeSizeModal(){
   const modal = document.getElementById('size-modal');
-  if(modal) modal.setAttribute('aria-hidden','true');
+  console.log('Tentando fechar size-modal:', modal);
+  if(modal) {
+    modal.setAttribute('aria-hidden','true');
+    modal.style.display = 'none';
+    modal.style.visibility = 'hidden';
+    modal.style.pointerEvents = 'none';
+    console.log('Size-modal fechado!');
+  }
   pendingAddId = null;
 }
 
@@ -181,26 +188,34 @@ async function showProductDetail(id){
 }
 
 async function addToCart(productId, size){
-  let prod = PRODUCTS_MAP[productId];
-  if(!prod){
-    try{
-      const res = await fetch(`/api/products/${productId}`);
-      prod = await res.json();
-      PRODUCTS_MAP[productId] = prod;
-    }catch(e){console.error(e);return}
+  try {
+    let prod = PRODUCTS_MAP[productId];
+    if(!prod){
+      try{
+        const res = await fetch(`/api/products/${productId}`);
+        prod = await res.json();
+        PRODUCTS_MAP[productId] = prod;
+      }catch(e){
+        console.error(e);
+        prod = DEFAULT_PRODUCTS.find(p => p.id === productId);
+        if(!prod) return;
+      }
+    }
+    // match by id AND size so different sizes are separate
+    const existing = state.cart.find(i=>i.id===productId && i.size===size);
+    if(existing) existing.qty += 1;
+    else state.cart.push({id:prod.id,title:prod.title,price:prod.price,img:prod.img,qty:1,size:size||''});
+    // bump cart button
+    const cartBtn = document.getElementById('cart-btn');
+    if(cartBtn){
+      cartBtn.classList.add('bump');
+      setTimeout(()=>{cartBtn.classList.remove('bump');},500);
+    }
+    saveCart();
+    renderCartCount();
+  } catch(e) {
+    console.error('Erro ao adicionar ao carrinho:', e);
   }
-  // match by id AND size so different sizes are separate
-  const existing = state.cart.find(i=>i.id===productId && i.size===size);
-  if(existing) existing.qty += 1;
-  else state.cart.push({id:prod.id,title:prod.title,price:prod.price,img:prod.img,qty:1,size:size||''});
-  // bump cart button
-  const cartBtn = document.getElementById('cart-btn');
-  if(cartBtn){
-    cartBtn.classList.add('bump');
-    setTimeout(()=>{cartBtn.classList.remove('bump');},500);
-  }
-  saveCart();
-  renderCartCount();
 }
 
 function removeFromCart(productId,size){
@@ -298,7 +313,7 @@ function checkout(){
 }
 
 // Event delegation para produtos dinâmicos
-document.body.addEventListener('click', (e)=>{
+document.body.addEventListener('click', async (e)=>{
   if(e.target.closest('.show-detail')){
     const id = e.target.closest('.show-detail').dataset.id;
     showProductDetail(id);
@@ -313,7 +328,9 @@ document.body.addEventListener('click', (e)=>{
         alert('Por favor, escolha um tamanho');
         return;
       }
-      addToCart(id, size);
+      await addToCart(id, size);
+      // Close modal after adding to cart
+      document.getElementById('product-modal').setAttribute('aria-hidden','true');
     } else {
       // from card — open size modal
       openSizeModal(id);
@@ -324,13 +341,16 @@ document.body.addEventListener('click', (e)=>{
 // size modal buttons
 const sizeConfirm = document.getElementById('size-confirm');
 if(sizeConfirm){
-  sizeConfirm.addEventListener('click', ()=>{
+  sizeConfirm.addEventListener('click', async ()=>{
+    console.log('Clique em size-confirm detectado');
     const size = document.getElementById('size-select')?.value || '';
+    console.log('Tamanho selecionado:', size);
     if(!size){
       alert('Por favor, escolha um tamanho');
       return;
     }
-    addToCart(pendingAddId,size);
+    await addToCart(pendingAddId,size);
+    console.log('Chamando closeSizeModal');
     closeSizeModal();
   });
 }

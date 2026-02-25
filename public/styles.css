@@ -6,12 +6,21 @@
   /* primary now neutral gray to match dark aesthetic */
   --primary:#888888;
 }
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&display=swap');
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:linear-gradient(180deg,#050505,var(--bg));color:var(--accent);-webkit-font-smoothing:antialiased}
-.site-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:transparent;position:relative}
+body{margin:0;font-family:'Poppins',system-ui,sans-serif;background:linear-gradient(180deg,#050505,var(--bg));color:var(--accent);-webkit-font-smoothing:antialiased;padding-top:160px}
+.promo-bar{position:fixed;top:0;left:0;right:0;background:#c8102e;color:#fff;text-align:center;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;font-size:12px;line-height:1;z-index:1000;font-family:'Poppins',sans-serif}
+.site-header{position:fixed;top:30px;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:16px 16px;background:#000;z-index:999;width:100%;border-bottom:1px solid #222;height:100px}
+.header-icons{display:flex;gap:16px;align-items:center}
+.header-icon-btn{background:transparent;border:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s}
+.header-icon-btn:hover{transform:scale(1.1)}
+.header-icon-btn svg{width:24px;height:24px}
 .logo{position:absolute;left:50%;transform:translateX(-50%);}
-.logo{height:48px;/* centered by absolute positioning */}
-.cart-btn{background:#fff;color:#000;border-radius:8px;padding:8px 12px;border:0;font-weight:600;position:relative;transition:transform 0.2s;margin-left:auto}
+.logo{height:70px;/* centered by absolute positioning */}
+.cart-btn{background:transparent;color:#fff;border-radius:8px;padding:8px 12px;border:0;font-weight:600;position:relative;transition:transform 0.2s;margin-left:auto;display:flex;align-items:center;justify-content:center;width:48px;height:48px;cursor:pointer}
+.cart-btn:hover{transform:scale(1.05)}
+.cart-btn svg{width:24px;height:24px}
+.cart-badge{position:absolute;top:-8px;right:-8px;background:#fff;color:#000;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
 .cart-btn.bump{animation:bump 0.5s ease-out}
 @keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
 .container{padding:16px}
@@ -19,17 +28,17 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial
 .hero h1{margin:0;font-size:22px}
 .hero p{margin:4px 0 0;color:var(--muted)}
 .products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.card{background:var(--card);padding:10px;border-radius:10px;transition:transform 0.2s,box-shadow 0.2s;opacity:0;transform:translateY(20px)}
+.card{background:var(--card);padding:10px;border-radius:10px;transition:transform 0.2s,box-shadow 0.2s;opacity:0;transform:translateY(20px);display:flex;flex-direction:column;height:100%}
 /* you can now target individual items using their generated id, e.g. #prod-top-001 {border:2px solid red;} */
 .card.visible{opacity:1;transform:translateY(0)}
 .card:hover{transform:scale(1.03);box-shadow:0 4px 12px rgba(0,0,0,0.4)}
 .card img{width:100%;height:140px;object-fit:cover;border-radius:8px;transition:transform 0.3s}
 .card:hover img{transform:scale(1.05)}
-.product-title{font-size:14px;margin:8px 0 4px;color:var(--accent);transition:color 0.2s}
+.product-title{font-size:14px;margin:8px 0 4px;color:var(--accent);transition:color 0.2s;flex-grow:1}
 .card:hover .product-title{color:var(--primary)}
-.price{font-weight:700;transition:color 0.2s}
+.price{font-weight:700;transition:color 0.2s;margin-top:auto;margin-bottom:8px}
 .card:hover .price{color:var(--primary)}
-.add{margin-top:8px;background:var(--primary);border:0;color:#fff;padding:8px;border-radius:8px;width:100%;cursor:pointer;transition:background 0.2s,transform 0.1s}
+.add{margin-top:auto;background:var(--primary);border:0;color:#fff;padding:8px;border-radius:8px;width:100%;cursor:pointer;transition:background 0.2s,transform 0.1s}
 .add:active{transform:scale(0.98)}
 .add:hover{background:darken(var(--primary),10%)}
 
@@ -66,13 +75,12 @@ body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial
   .footer-search input{width:calc(100% - 72px)}
 }
 
-/* Barra de promoção (acima do rodapé) */
-.promo-bar{background:#c8102e;color:#fff;text-align:center;padding:6px 8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;font-size:12px;line-height:1}
+
 
 /* Product detail modal */
-.product-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);padding:20px;opacity:0;transition:opacity 0.2s}
-.product-modal[aria-hidden="false"]{display:flex;opacity:1}
-.product-modal[aria-hidden="false"]{display:flex}
+.product-modal{position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);padding:20px;opacity:0;transition:opacity 0.2s;z-index:999;pointer-events:none}
+.product-modal[aria-hidden="true"]{display:none}
+.product-modal[aria-hidden="false"]{display:flex;opacity:1;pointer-events:auto}
 .product-panel{background:#0f0f0f;padding:12px;border-radius:12px;max-width:900px;width:100%}
 .product-content{display:flex;gap:12px;align-items:flex-start}
 .product-content img{width:48%;height:auto;border-radius:8px;object-fit:cover}
