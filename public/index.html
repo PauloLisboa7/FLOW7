@@ -2,10 +2,10 @@
 <html lang="pt-br">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover" />
     <title>FLOW7 — Loja</title>
     <!-- add version parameter to bust cache on updates -->
-    <link rel="stylesheet" href="styles.css?v=3" />
+    <link rel="stylesheet" href="styles.css?v=4" />
     <!-- Firebase SDK -->
     <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js"></script>
     <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js"></script>
@@ -59,7 +59,7 @@
             <p id="product-desc" class="product-desc"></p>
             <div class="size-row">
               <label for="product-size" style="font-size:14px;display:block;margin:8px 0 4px;color:#e6e6e6">Tamanho</label>
-              <select id="product-size" style="width:100%;padding:8px;border-radius:8px;border:1px solid #222;background:#111;color:#e6e6e6;font-size:14px">
+              <select id="product-size" style="width:100%;padding:8px;border-radius:8px;border:1px solid #222;background:#111;color:#e6e6e6;font-size:16px">
                 <option value="" style="background:#111;color:#e6e6e6">Escolha</option>
                 <option value="P" style="background:#111;color:#e6e6e6">P</option>
                 <option value="M" style="background:#111;color:#e6e6e6">M</option>
@@ -79,7 +79,7 @@
         <button id="size-cancel" class="close">×</button>
         <h3 style="color:var(--accent);text-align:center;margin-top:0">Escolha um tamanho</h3>
         <div class="size-row" style="margin:12px 0">
-          <select id="size-select" style="width:100%;padding:8px;border-radius:8px;border:1px solid #222;background:#111;color:#e6e6e6;font-size:14px">
+          <select id="size-select" style="width:100%;padding:8px;border-radius:8px;border:1px solid #222;background:#111;color:#e6e6e6;font-size:16px">
             <option value="" style="background:#111;color:#e6e6e6">Escolha</option>
             <option value="P" style="background:#111;color:#e6e6e6">P</option>
             <option value="M" style="background:#111;color:#e6e6e6">M</option>
@@ -169,12 +169,23 @@
         
         <!-- Signup Form -->
         <div id="signup-form" class="auth-form" style="display:none">
-          <div class="breadcrumb">Início > Minha Conta > Registrar</div>
+          <div class="breadcrumb">Início > Minha Conta > Cadastre-se</div>
           <h2>Criar uma conta</h2>
+          <p class="signup-subtitle">Compre mais rápido e acompanhe seus pedidos em um só lugar!</p>
+          
+          <div class="form-group">
+            <label for="signup-name">Nome completo</label>
+            <input type="text" id="signup-name" placeholder="ex.: Maria Perez" />
+          </div>
           
           <div class="form-group">
             <label for="signup-email">E-mail</label>
             <input type="email" id="signup-email" placeholder="ex.: seuemail@email.com.br" />
+          </div>
+          
+          <div class="form-group">
+            <label for="signup-phone">Telefone (opcional)</label>
+            <input type="tel" id="signup-phone" placeholder="ex.: 11971923030" />
           </div>
           
           <div class="form-group">
@@ -203,10 +214,14 @@
             </div>
           </div>
           
+          <div class="recaptcha-wrapper">
+            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-theme="dark"></div>
+          </div>
+          
           <button id="signup-btn" class="auth-btn">Criar conta</button>
           
           <div class="form-footer">
-            Já possui uma conta? <a href="#" id="to-login-link" class="link">Iniciar sessão</a>
+            Já possui uma conta? <a href="#" id="to-login-link" class="link">Faça login</a>
           </div>
           
           <div id="signup-error" class="auth-error"></div>
@@ -298,7 +313,7 @@
           return;
         }
         
-        console.log('✅ Elementos encontrados! Adicionando listener...');
+        console.log('✅ Elementos encontrados! Adicionando listeners...');
         
         userBtn.addEventListener('click', function(e) {
           console.log('👆 USER BUTTON CLICKED!');
@@ -322,7 +337,65 @@
           console.log('✅ MODAL SHOULD BE VISIBLE NOW');
         });
         
-        console.log('✅ Event listener attached to user button');
+        // Setup form navigation links
+        const toSignupLink = document.getElementById('to-signup-link');
+        const toLoginLink = document.getElementById('to-login-link');
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const backToLoginLink = document.getElementById('back-to-login-link');
+        
+        if (toSignupLink) {
+          toSignupLink.addEventListener('click', function(e) {
+            console.log('📝 TO SIGNUP LINK CLICKED!');
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('forgot-form').style.display = 'none';
+            document.getElementById('signup-form').style.display = 'block';
+            // Clear forms
+            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
+          });
+        }
+        
+        if (toLoginLink) {
+          toLoginLink.addEventListener('click', function(e) {
+            console.log('🔑 TO LOGIN LINK CLICKED!');
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('forgot-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+            // Clear forms
+            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
+          });
+        }
+        
+        if (forgotPasswordLink) {
+          forgotPasswordLink.addEventListener('click', function(e) {
+            console.log('🔐 FORGOT PASSWORD LINK CLICKED!');
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('forgot-form').style.display = 'block';
+            // Clear forms
+            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
+          });
+        }
+        
+        if (backToLoginLink) {
+          backToLoginLink.addEventListener('click', function(e) {
+            console.log('🏠 BACK TO LOGIN LINK CLICKED!');
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('forgot-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+            // Clear forms
+            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
+          });
+        }
+        
+        console.log('✅ Event listeners attached successfully');
       }
       
       // Execute immediately
@@ -354,5 +427,7 @@
     </script>
     <script src="auth.js"></script>
     <script src="app.js"></script>
+    <!-- reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </body>
 </html>

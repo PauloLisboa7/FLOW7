@@ -49,6 +49,12 @@ function clearAuthForms() {
     el.textContent = '';
     el.classList.remove('show');
   });
+  // Reset reCAPTCHA if loaded
+  if (typeof grecaptcha !== 'undefined') {
+    try {
+      grecaptcha.reset();
+    } catch(e) {}
+  }
 }
 
 // Form validation
@@ -152,9 +158,14 @@ async function handleLogin(email, password) {
 }
 
 // Signup function
-async function handleSignup(email, password, confirm) {
+async function handleSignup(name, email, phone, password, confirm) {
+  if (!name || name.trim().length < 3) {
+    showAuthError('signup', 'Nome de completo deve ter no mínimo 3 caracteres');
+    return;
+  }
+  
   if (!validateEmail(email)) {
-    showAuthError('signup', 'Por favor, insira um e-mail válido');
+    showAuthError('signup', 'E-mail inválido');
     return;
   }
   
@@ -173,8 +184,21 @@ async function handleSignup(email, password, confirm) {
   try {
     const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
     currentUser = result.user;
+    
+    // Save user profile to Firestore
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
+      const db = firebase.firestore();
+      await db.collection('users').doc(currentUser.uid).set({
+        name: name.trim(),
+        email: email,
+        phone: phone || '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+    
     console.log('✅ Conta criada com sucesso:', currentUser.email);
-    showAuthSuccess('signup', 'Conta criada com sucesso!');
+    showAuthSuccess('signup', 'Conta criada! Bem-vindo à FLOW7!');
     setTimeout(() => {
       closeAuthModal();
       updateUserProfile();
@@ -183,11 +207,13 @@ async function handleSignup(email, password, confirm) {
     console.error('❌ Erro ao criar conta:', error);
     let message = 'Erro ao criar conta';
     if (error.code === 'auth/email-already-in-use') {
-      message = 'E-mail já existe';
+      message = 'E-mail já cadastrado';
     } else if (error.code === 'auth/weak-password') {
       message = 'Senha muito fraca';
     } else if (error.code === 'auth/invalid-email') {
       message = 'E-mail inválido';
+    } else if (error.message) {
+      message = error.message;
     }
     showAuthError('signup', message);
   } finally {
@@ -322,10 +348,12 @@ function setupAuthEventListeners() {
   
   // Signup form
   document.getElementById('signup-btn')?.addEventListener('click', () => {
-    const email = document.getElementById('signup-email')?.value || '';
-    const password = document.getElementById('signup-password')?.value || '';
-    const confirm = document.getElementById('signup-confirm')?.value || '';
-    handleSignup(email, password, confirm);
+    const name = (document.getElementById('signup-name') || {}).value || '';
+    const email = (document.getElementById('signup-email') || {}).value || '';
+    const phone = (document.getElementById('signup-phone') || {}).value || '';
+    const password = (document.getElementById('signup-password') || {}).value || '';
+    const confirm = (document.getElementById('signup-confirm') || {}).value || '';
+    handleSignup(name, email, phone, password, confirm);
   });
   
   // Forgot password form
