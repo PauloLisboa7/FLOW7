@@ -52,13 +52,28 @@ function signOutUser() {
 function getCurrentUser() {
   return firebase.auth().currentUser;
 }
-
-// Listener para mudanças de autenticação
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    console.log('✅ Usuário autenticado:', user.email);
-    // Atualizar UI se necessário
-  } else {
-    console.log('❌ Usuário não autenticado');
-  }
-});
+// Listener para mudanças de autenticação - registra apenas se o SDK já estiver carregado
+if (typeof firebase !== 'undefined' && firebase.auth) {
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      console.log('✅ Usuário autenticado:', user.email);
+      // Atualizar UI se necessário
+    } else {
+      console.log('❌ Usuário não autenticado');
+    }
+  });
+} else {
+  // Caso o SDK ainda não esteja pronto, inicializamos o listener após init
+  const _initRetry = setInterval(() => {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      clearInterval(_initRetry);
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          console.log('✅ Usuário autenticado:', user.email);
+        } else {
+          console.log('❌ Usuário não autenticado');
+        }
+      });
+    }
+  }, 200);
+}

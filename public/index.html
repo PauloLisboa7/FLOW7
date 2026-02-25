@@ -13,18 +13,21 @@
     <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-analytics.js"></script>
     <script defer src="firebase-config.js"></script>
   </head>
-  <body>
-    <div class="promo-bar">FRETE GRÁTIS P/ TODOS OS ALUNOS DO SENAC MA CUPOM <strong>ALMICEA</strong>: 30% OFF</div>
+  <body class="home">
+    <div class="promo-bar">
+      <span class="promo-line">FRETE GRÁTIS P/ TODOS OS ALUNOS DO SENAC MA</span>
+      <span class="promo-coupon">CUPOM <strong>ALMICEA</strong>: 30% OFF</span>
+    </div>
     <header class="site-header">
       <div class="header-icons">
-        <button id="user-btn" class="header-icon-btn" title="Perfil">
+        <a id="user-btn" class="header-icon-btn" href="auth.html?form=login" title="Perfil" role="button">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
-        </button>
+        </a>
       </div>
-      <img src="flow7%20logo.png" alt="FLOW7" class="logo" />
+      <a href="index.html#products"><img src="flow7%20logo.png" alt="FLOW7" class="logo" /></a>
       <button id="cart-btn" class="cart-btn" title="Carrinho">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
           <circle cx="9" cy="21" r="1"></circle>
@@ -215,7 +218,7 @@
           </div>
           
           <div class="recaptcha-wrapper">
-            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-theme="dark" style="transform:scale(0.9);transform-origin:0 0;margin:-5px 0"></div>
+              <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-theme="dark" style="transform:scale(0.9);transform-origin:0 0;margin:-5px 0"></div>
           </div>
           
           <button id="signup-btn" class="auth-btn">Criar conta</button>
@@ -226,6 +229,21 @@
           
           <div id="signup-error" class="auth-error"></div>
           <div id="signup-loading" class="auth-loading"></div>
+        </div>
+        
+        <!-- Verification Panel (shown after signup) -->
+        <div id="verify-panel" class="auth-form verify-panel" style="display:none">
+          <div class="breadcrumb">Início > Minha Conta > Verifique seu e-mail</div>
+          <h3>Você está a um passo de criar sua conta!</h3>
+
+          <div class="verify-box">
+            <p>Enviamos um link para <span id="verify-email-text" style="font-weight:700"></span> para validar seu e-mail.</p>
+          </div>
+
+          <p style="text-align:center;margin-top:18px;color:var(--muted)">Ainda não recebeu? <a href="#" id="resend-verification-link" class="link">Enviar o link novamente</a></p>
+
+          <div id="verify-error" class="auth-error"></div>
+          <div id="verify-loading" class="auth-loading"></div>
         </div>
         
         <!-- Forgot Password Form -->
@@ -240,7 +258,7 @@
             <input type="email" id="forgot-email" placeholder="ex.: seuemail@email.com.br" />
           </div>
           
-          <button id="forgot-btn" class="auth-btn">Enviar link</button>
+          <button type="button" id="forgot-btn" class="auth-btn">Enviar link</button>
           
           <div class="form-footer">
             <a href="#" id="back-to-login-link" class="link">Voltar para login</a>
@@ -297,153 +315,7 @@
       </div>
     </footer>
 
-    <script>
-      // Debug script - remove after fixing
-      console.log('🚀 Iniciando página...');
-      console.log('📄 DOM Status:', document.readyState);
-      
-      // Force modal opening on user button click
-      function forceModalOpen() {
-        const userBtn = document.getElementById('user-btn');
-        const modal = document.getElementById('auth-modal');
-        
-        if (!userBtn || !modal) {
-          console.log('⏳ Elementos não prontos, tentando novamente...');
-          setTimeout(forceModalOpen, 100);
-          return;
-        }
-        
-        console.log('✅ Elementos encontrados! Adicionando listeners...');
-        
-        userBtn.addEventListener('click', function(e) {
-          console.log('👆 USER BUTTON CLICKED!');
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Force modal to be visible
-          modal.setAttribute('aria-hidden', 'false');
-          modal.style.display = 'flex !important';
-          modal.style.visibility = 'visible';
-          modal.style.zIndex = '9999';
-          
-          // Show login form
-          const loginForm = document.getElementById('login-form');
-          if (loginForm) {
-            document.getElementById('signup-form').style.display = 'none';
-            document.getElementById('forgot-form').style.display = 'none';
-            loginForm.style.display = 'block';
-          }
-          
-          console.log('✅ MODAL SHOULD BE VISIBLE NOW');
-        });
-        
-        // Setup form navigation links
-        const toSignupLink = document.getElementById('to-signup-link');
-        const toLoginLink = document.getElementById('to-login-link');
-        const forgotPasswordLink = document.getElementById('forgot-password-link');
-        const backToLoginLink = document.getElementById('back-to-login-link');
-        
-        if (toSignupLink) {
-          toSignupLink.addEventListener('click', function(e) {
-            console.log('📝 TO SIGNUP LINK CLICKED!');
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('forgot-form').style.display = 'none';
-            document.getElementById('signup-form').style.display = 'block';
-            // Clear forms
-            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
-          });
-        }
-        
-        if (toLoginLink) {
-          toLoginLink.addEventListener('click', function(e) {
-            console.log('🔑 TO LOGIN LINK CLICKED!');
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('signup-form').style.display = 'none';
-            document.getElementById('forgot-form').style.display = 'none';
-            document.getElementById('login-form').style.display = 'block';
-            // Clear forms
-            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
-          });
-        }
-        
-        if (forgotPasswordLink) {
-          forgotPasswordLink.addEventListener('click', function(e) {
-            console.log('🔐 FORGOT PASSWORD LINK CLICKED!');
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('signup-form').style.display = 'none';
-            document.getElementById('forgot-form').style.display = 'block';
-            // Clear forms
-            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
-          });
-        }
-        
-        if (backToLoginLink) {
-          backToLoginLink.addEventListener('click', function(e) {
-            console.log('🏠 BACK TO LOGIN LINK CLICKED!');
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('signup-form').style.display = 'none';
-            document.getElementById('forgot-form').style.display = 'none';
-            document.getElementById('login-form').style.display = 'block';
-            // Clear forms
-            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
-          });
-        }
-        
-        // Setup close button
-        const authCloseBtn = document.getElementById('auth-close');
-        if (authCloseBtn) {
-          authCloseBtn.addEventListener('click', function(e) {
-            console.log('❌ AUTH CLOSE BUTTON CLICKED!');
-            e.preventDefault();
-            e.stopPropagation();
-            // Hide modal
-            modal.setAttribute('aria-hidden', 'true');
-            modal.style.display = 'none';
-            // Reset to login form
-            document.getElementById('login-form').style.display = 'block';
-            document.getElementById('signup-form').style.display = 'none';
-            document.getElementById('forgot-form').style.display = 'none';
-            // Clear forms
-            document.querySelectorAll('.auth-form input').forEach(input => input.value = '');
-          });
-        }
-        
-        console.log('✅ Event listeners attached successfully');
-      }
-      
-      // Execute immediately
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', forceModalOpen);
-      } else {
-        forceModalOpen();
-      }
-      
-      window.addEventListener('DOMContentLoaded', ()=> {
-        console.log('✅ DOMContentLoaded disparado');
-      });
-      
-      // ensure product size selector styling is applied even if CSS cached
-      document.addEventListener('DOMContentLoaded', function(){
-        console.log('🔍 Verificando elementos do auth...');
-        const userBtn = document.getElementById('user-btn');
-        const authModal = document.getElementById('auth-modal');
-        console.log('🔘 User button:', userBtn ? '✅ ENCONTRADO' : '❌ NÃO ENCONTRADO');
-        console.log('🎭 Auth modal:', authModal ? '✅ ENCONTRADO' : '❌ NÃO ENCONTRADO');
-        
-        const sizeSelect = document.getElementById('product-size');
-        if(sizeSelect){
-          sizeSelect.style.background='#111';
-          sizeSelect.style.color='#e6e6e6';
-          sizeSelect.style.border='1px solid #222';
-        }
-      });
-    </script>
+    <!-- debug script removed to favor separate auth page navigation -->
     <script src="auth.js"></script>
     <script src="app.js"></script>
     <!-- reCAPTCHA -->
