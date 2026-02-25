@@ -49,8 +49,12 @@ body{margin:0;font-family:'Poppins',system-ui,sans-serif;background:linear-gradi
 .cart-item{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #222}
 .cart-item img{width:56px;height:56px;object-fit:cover;border-radius:6px}
 .qty{display:flex;gap:6px;align-items:center}
-.coupon-row{display:flex;gap:8px;margin-top:12px}
+.coupon-row{display:flex;gap:8px;margin-top:12px;flex-direction:column}
 .coupon-row input{flex:1;padding:8px;border-radius:8px;border:1px solid #222;background:transparent;color:var(--accent)}
+.coupon-row>div:first-of-type{display:flex;gap:8px}
+.coupon-msg{font-size:13px;color:var(--muted);margin-top:4px;min-height:18px;transition:color 0.2s,opacity 0.2s;opacity:0}
+.coupon-msg.success{color:#00b894;opacity:1}
+.coupon-msg.error{color:#ff6b6b;opacity:1}
 .summary{margin-top:12px;color:var(--muted)}
 .total{margin-top:6px;font-weight:700;color:var(--accent)}
 .checkout{background:#00b894;border:0;padding:10px;border-radius:10px;color:#fff;margin-top:10px;width:100%;font-weight:700}

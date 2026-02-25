@@ -6,6 +6,12 @@
     <title>FLOW7 — Loja</title>
     <!-- add version parameter to bust cache on updates -->
     <link rel="stylesheet" href="styles.css?v=2" />
+    <!-- Firebase SDK -->
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.7.2/firebase-analytics.js"></script>
+    <script defer src="firebase-config.js"></script>
   </head>
   <body>
     <div class="promo-bar">FRETE GRÁTIS P/ TODOS OS ALUNOS DO SENAC MA CUPOM <strong>ALMICEA</strong>: 30% OFF</div>
@@ -92,8 +98,10 @@
         <div id="cart-items"></div>
 
         <div class="coupon-row">
-          <input id="coupon-input" placeholder="Código do cupom" />
-          <button id="coupon-btn">Aplicar</button>
+          <div>
+            <input id="coupon-input" placeholder="Código do cupom" />
+            <button id="coupon-btn">Aplicar</button>
+          </div>
           <div id="coupon-msg" class="coupon-msg"></div>
         </div>
 

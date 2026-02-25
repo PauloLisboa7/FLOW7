@@ -280,16 +280,19 @@ function updateSummary(){
 
 function applyCoupon(){
   const input = document.getElementById('coupon-input');
+  const msg = document.getElementById('coupon-msg');
   const code = input.value.trim().toUpperCase();
   if(code === COUPON_CODE){
     state.coupon = COUPON_CODE;
     input.value = '';
-    document.getElementById('coupon-msg').textContent = '✅ Cupom aplicado com sucesso!';
+    msg.textContent = 'Cupom aplicado com sucesso!';
+    msg.className = 'coupon-msg success';
     updateSummary();
-    setTimeout(()=>{ document.getElementById('coupon-msg').textContent = ''; }, 3000);
+    setTimeout(()=>{ msg.textContent = ''; msg.className = 'coupon-msg'; }, 3000);
   }else{
-    document.getElementById('coupon-msg').textContent = '❌ Cupom inválido';
-    setTimeout(()=>{ document.getElementById('coupon-msg').textContent = ''; }, 3000);
+    msg.textContent = 'Cupom inválido';
+    msg.className = 'coupon-msg error';
+    setTimeout(()=>{ msg.textContent = ''; msg.className = 'coupon-msg'; }, 3000);
   }
 }
 
