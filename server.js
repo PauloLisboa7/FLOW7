@@ -227,11 +227,15 @@ app.get('/api/products/:id', (req, res) => {
   res.json(prod);
 });
 
-// Static files
-app.use(express.static(path.join(__dirname)));
+// Static files - com opções para cache
+app.use(express.static(path.join(__dirname, '.'), {
+  maxAge: '1d',
+  etag: false
+}));
 
 // Fallback para index.html
 app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
