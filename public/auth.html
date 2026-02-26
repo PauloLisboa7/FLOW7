@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover" />
     <title>FLOW7 — Conta</title>
     <link rel="stylesheet" href="styles.css?v=5" />
-    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-analytics.js"></script>
-    <script src="firebase-config.js"></script>
+
   </head>
   <body class="auth">
     <div class="promo-bar">
@@ -18,14 +14,7 @@
     </div>
 
     <header class="site-header">
-      <div class="header-icons">
-        <a id="user-btn" class="header-icon-btn" href="auth.html?form=login" title="Perfil" role="button">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </a>
-      </div>
+
       <a href="index.html#products"><img src="flow7%20logo.png" alt="FLOW7" class="logo" /></a>
       <a id="cart-btn" class="cart-btn" href="#" title="Carrinho">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
@@ -39,89 +28,8 @@
 
     <main class="container" id="account-main">
       <section class="auth-page">
-        <!-- Forms will be shown based on ?form=login|signup|forgot -->
-        <div id="page-login" class="auth-form">
-          <h2>Iniciar sessão</h2>
-          <div class="form-group">
-            <label for="page-login-email">E-mail</label>
-            <input type="email" id="page-login-email" placeholder="ex.: seuemail@email.com.br" />
-          </div>
-          <div class="form-group">
-            <label for="page-login-password">Senha</label>
-            <div class="password-input-wrapper">
-              <input type="password" id="page-login-password" placeholder="ex.: suasenha" />
-              <button type="button" class="toggle-password" onclick="togglePasswordVisibility('page-login-password')" title="Mostrar/ocultar senha">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <button id="page-login-btn" type="button" class="auth-btn">Iniciar sessão</button>
-          <div class="form-footer">
-            <a href="auth.html?form=forgot" class="link">Esqueceu a senha?</a>
-            <span>Não possui uma conta? <a href="auth.html?form=signup" class="link">Criar uma conta</a></span>
-          </div>
-          <div id="page-login-error" class="auth-error"></div>
-        </div>
-
-        <div id="page-signup" class="auth-form" style="display:none">
-          <h2>Criar uma conta</h2>
-          <p class="signup-subtitle">Compre mais rápido e acompanhe seus pedidos em um só lugar!</p>
-          <div class="form-group">
-            <label for="page-signup-name">Nome completo</label>
-            <input type="text" id="page-signup-name" placeholder="ex.: Maria Perez" />
-          </div>
-          <div class="form-group">
-            <label for="page-signup-email">E-mail</label>
-            <input type="email" id="page-signup-email" placeholder="ex.: seuemail@email.com.br" />
-          </div>
-          <div class="form-group">
-            <label for="page-signup-phone">Telefone (opcional)</label>
-            <input type="tel" id="page-signup-phone" placeholder="ex.: 11971923030" />
-          </div>
-          <div class="form-group">
-            <label for="page-signup-password">Senha</label>
-            <div class="password-input-wrapper">
-              <input type="password" id="page-signup-password" placeholder="ex.: suasenha" />
-              <button type="button" class="toggle-password" onclick="togglePasswordVisibility('page-signup-password')" title="Mostrar/ocultar senha">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="page-signup-confirm">Confirmar senha</label>
-            <div class="password-input-wrapper">
-              <input type="password" id="page-signup-confirm" placeholder="Confirme sua senha" />
-              <button type="button" class="toggle-password" onclick="togglePasswordVisibility('page-signup-confirm')" title="Mostrar/ocultar senha">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <button id="page-signup-btn" type="button" class="auth-btn">Criar conta</button>
-          <div class="form-footer">Já possui uma conta? <a href="auth.html?form=login" class="link">Faça login</a></div>
-          <div id="page-signup-error" class="auth-error"></div>
-        </div>
-
-        <div id="page-forgot" class="auth-form" style="display:none">
-          <h2>Esqueceu a senha?</h2>
-          <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">Insira seu e-mail e enviaremos um link para redefinir sua senha.</p>
-          <div class="form-group">
-            <label for="page-forgot-email">E-mail</label>
-            <input type="email" id="page-forgot-email" placeholder="ex.: seuemail@email.com.br" />
-          </div>
-          <button id="page-forgot-btn" type="button" class="auth-btn">Enviar link</button>
-          <div class="form-footer"><a href="auth.html?form=login" class="link">Voltar para login</a></div>
-          <div id="page-forgot-error" class="auth-error"></div>
-          <div id="page-forgot-success" class="auth-success"></div>
-        </div>
+        <h2>Autenticação removida</h2>
+        <p>Este projeto não utiliza mais recursos de login ou cadastro.</p>
       </section>
     </main>
 
@@ -139,71 +47,7 @@
       </div>
     </footer>
 
-    <script src="auth.js"></script>
-    <script>
-      // Toggle password visibility
-      function togglePasswordVisibility(inputId) {
-        const input = document.getElementById(inputId);
-        if (input) {
-          const type = input.type === 'password' ? 'text' : 'password';
-          input.type = type;
-        }
-      }
-
-      // Small bootstrap: read ?form= and show the right panel
-      (function(){
-        function param(name){
-          const url = new URL(window.location.href);
-          return url.searchParams.get(name);
-        }
-        const form = (param('form') || 'login').toLowerCase();
-        document.getElementById('page-login').style.display = 'none';
-        document.getElementById('page-signup').style.display = 'none';
-        document.getElementById('page-forgot').style.display = 'none';
-        if(form === 'signup') document.getElementById('page-signup').style.display = 'block';
-        else if(form === 'forgot') document.getElementById('page-forgot').style.display = 'block';
-        else document.getElementById('page-login').style.display = 'block';
-
-        // Wire page buttons to existing handlers
-        document.getElementById('page-login-btn')?.addEventListener('click', ()=>{
-          const email = document.getElementById('page-login-email')?.value||'';
-          const pass = document.getElementById('page-login-password')?.value||'';
-          handleLogin(email, pass);
-        });
-        document.getElementById('page-login-email')?.addEventListener('keypress', (e)=>{
-          if(e.key === 'Enter'){
-            const email = document.getElementById('page-login-email')?.value||'';
-            const pass = document.getElementById('page-login-password')?.value||'';
-            handleLogin(email, pass);
-          }
-        });
-        document.getElementById('page-login-password')?.addEventListener('keypress', (e)=>{
-          if(e.key === 'Enter'){
-            const email = document.getElementById('page-login-email')?.value||'';
-            const pass = document.getElementById('page-login-password')?.value||'';
-            handleLogin(email, pass);
-          }
-        });
-        document.getElementById('page-signup-btn')?.addEventListener('click', ()=>{
-          const name = document.getElementById('page-signup-name')?.value||'';
-          const email = document.getElementById('page-signup-email')?.value||'';
-          const phone = document.getElementById('page-signup-phone')?.value||'';
-          const pass = document.getElementById('page-signup-password')?.value||'';
-          const confirm = document.getElementById('page-signup-confirm')?.value||'';
-          handleSignup(name,email,phone,pass,confirm);
-        });
-        document.getElementById('page-forgot-btn')?.addEventListener('click', ()=>{
-          const email = document.getElementById('page-forgot-email')?.value||'';
-          handleForgotPassword(email);
-        });
-        document.getElementById('page-forgot-email')?.addEventListener('keypress', (e)=>{
-          if(e.key === 'Enter'){
-            const email = document.getElementById('page-forgot-email')?.value||'';
-            handleForgotPassword(email);
-          }
-        });
-      })();
-    </script>
+    <script type="module" src="auth.js"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </body>
 </html>

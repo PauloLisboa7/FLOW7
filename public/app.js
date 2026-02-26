@@ -47,6 +47,22 @@ function getSizeOptions(prod){
   return ['P','M','G','GG'];
 }
 
+// migrate default products into Firestore when available
+async function migrateProductsToFirestore() {
+  if (!(window.firebase && firebase.apps && firebase.apps.length)) return;
+  try {
+    const db = firebase.firestore();
+    const snapshot = await db.collection('products').limit(1).get();
+    if (!snapshot.empty) return; // already has data
+    for (const p of DEFAULT_PRODUCTS) {
+      await db.collection('products').doc(p.id).set(p);
+    }
+    console.log('⚙️ Produtos padrão migrados para Firestore');
+  } catch (err) {
+    console.warn('⚠️ Erro ao migrar produtos para Firestore:', err);
+  }
+}
+
 // show simple size picker modal for direct-add
 function openSizeModal(productId){
   pendingAddId = productId;
@@ -90,6 +106,27 @@ async function fetchProducts(){
   PRODUCTS.forEach(p => { PRODUCTS_MAP[p.id] = p; });
   renderProducts();
   console.log('✅ Produtos locais carregados (20 itens)');
+
+  // se o Firebase estiver disponível, tente buscar do Firestore
+  if (window.firebase && firebase.apps && firebase.apps.length) {
+    try {
+      const db = firebase.firestore();
+      const snapshot = await db.collection('products').get();
+      if (!snapshot.empty) {
+        const list = [];
+        snapshot.forEach(doc => list.push(doc.data()));
+        if (list.length) {
+          PRODUCTS = list;
+          PRODUCTS.forEach(p => { PRODUCTS_MAP[p.id] = p; });
+          renderProducts();
+          console.log('✅ Produtos carregados do Firestore!');
+          return;
+        }
+      }
+    } catch(fsErr) {
+      console.warn('Erro ao buscar produtos no Firestore:', fsErr);
+    }
+  }
 
   try{
     // Depois buscar do servidor em background
@@ -387,6 +424,9 @@ document.getElementById('coupon-input')?.addEventListener('keypress',(e)=>{ if(e
 document.getElementById('checkout-btn')?.addEventListener('click',checkout);
 
 // Inicializar
+if (window.firebase && firebase.apps && firebase.apps.length) {
+  migrateProductsToFirestore().catch(()=>{});
+}
 fetchProducts();
 renderCartCount();
 renderCart(); // show persisted cart if user opens modal later

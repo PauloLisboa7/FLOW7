@@ -1,9 +1,88 @@
-// Authentication Module
-// Integrates with Firebase Auth
+// auth.js stub
+// Authentication feature removed from this project.
 
-let currentUser = null;
+console.log('🔒 Auth module disabled.');
+
+// This file is intentionally left mostly empty now that authentication
+// has been stripped from the project. Any legacy functions or listeners
+// have been removed.
+
+
+// Local storage helpers for fallback auth
+function getLocalUsers() {
+  try {
+    return JSON.parse(localStorage.getItem('flow7_users') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+function saveLocalUsers(users) {
+  localStorage.setItem('flow7_users', JSON.stringify(users));
+}
+function findLocalUser(email) {
+  const users = getLocalUsers();
+  return users.find(u => u.email === email);
+}
+function addLocalUser(user) {
+  const users = getLocalUsers();
+  users.push(user);
+  saveLocalUsers(users);
+}
+function setCurrentUserLocal(user) {
+  currentUser = user;
+  if (user && user.email) localStorage.setItem('flow7_current_user', user.email);
+  else localStorage.removeItem('flow7_current_user');
+}
+function loadCurrentUserLocal() {
+  const email = localStorage.getItem('flow7_current_user');
+  if (email) {
+    const u = findLocalUser(email);
+    if (u) currentUser = u;
+  }
+}
+
+function isFirebaseAvailable() {
+  return typeof firebase !== 'undefined' && firebase && firebase.apps && firebase.apps.length > 0;
+}
+
+// migrate any local accounts stored in localStorage to Firestore
+async function migrateLocalUsersToFirebase() {
+  if (!isFirebaseAvailable()) return;
+  const users = getLocalUsers();
+  if (!users.length) return;
+  try {
+    const db = firebase.firestore();
+    for (const u of users) {
+      // check if user already exists in Firebase
+      const methods = await firebase.auth().fetchSignInMethodsForEmail(u.email);
+      if (methods.length === 0) {
+        // create user in auth with a temporary password then update
+        const tempPass = u.password || Math.random().toString(36).slice(-8);
+        const res = await firebase.auth().createUserWithEmailAndPassword(u.email, tempPass);
+        await res.user.updateProfile({ displayName: u.name });
+        await db.collection('users').doc(res.user.uid).set({
+          name: u.name,
+          email: u.email,
+          phone: u.phone || '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        // optionally send verification
+        await res.user.sendEmailVerification().catch(()=>{});
+      }
+    }
+    // once migrated we can clear local list to avoid duplication
+    localStorage.removeItem('flow7_users');
+    console.log('⚙️ Usuários locais migrados para Firebase');
+  } catch (e) {
+    console.warn('⚠️ Erro ao migrar usuários locais:', e);
+  }
+} 
 
 console.log('✅ Auth.js carregado');
+
+// listener guard
+let listenersAttached = false;
 
 // Modal control
 function openAuthModal(form = 'login') {
@@ -28,24 +107,44 @@ function closeAuthModal() {
 }
 
 function showAuthForm(formName) {
-  // Hide main auth forms
+  console.log('📄 showAuthForm chamado com:', formName);
+  // Hide modal forms
   document.getElementById('login-form')?.style.setProperty('display', 'none');
   document.getElementById('signup-form')?.style.setProperty('display', 'none');
   document.getElementById('forgot-form')?.style.setProperty('display', 'none');
-  // Also hide verify panel if present
   document.getElementById('verify-panel')?.style.setProperty('display', 'none');
+  // Hide page forms
+  document.getElementById('page-login')?.style.setProperty('display', 'none');
+  document.getElementById('page-signup')?.style.setProperty('display', 'none');
+  document.getElementById('page-forgot')?.style.setProperty('display', 'none');
+  document.getElementById('page-verify')?.style.setProperty('display', 'none');
 
-  // Support both "<name>-form" ids and special 'verify' panel
   if (formName === 'verify') {
+    console.log('📄 Mostrando painel de verificação/modal ou página');
     const vp = document.getElementById('verify-panel');
-    if (vp) vp.style.display = 'block';
+    if (vp) {
+      vp.style.display = 'block';
+      console.log('📄 Painel de verificação (modal) mostrado');
+      return;
+    }
+    const pv = document.getElementById('page-verify');
+    if (pv) {
+      pv.style.display = 'block';
+      console.log('📄 Painel de verificação (página) mostrado');
+      return;
+    }
+    console.error('❌ Painel de verificação não encontrado nem modal nem página');
     return;
   }
 
   const formId = formName + '-form';
   const form = document.getElementById(formId);
+  console.log('📄 Form element:', formId, form);
   if (form) {
     form.style.display = 'block';
+    console.log('📄 Form mostrado:', formId);
+  } else {
+    console.error('❌ Form não encontrado:', formId);
   }
 }
 
@@ -144,9 +243,17 @@ function showAuthLoading(formType, show = true) {
 
 // Login function
 async function handleLogin(email, password) {
-  if (typeof firebase === 'undefined') {
-    showAuthError('login', '❌ Serviço indisponível. Aguarde e tente novamente.');
-    return;
+  // reevaluate firebase availability in case it loaded after init
+  useFirebase = isFirebaseAvailable();
+  // fallback for local
+  if (!useFirebase) {
+    console.log('🔐 Modo local: tentando login');
+  }
+  if (useFirebase) {
+    if (typeof firebase === 'undefined') {
+      showAuthError('login', '❌ Serviço indisponível. Aguarde e tente novamente.');
+      return;
+    }
   }
   // Validar campo vazio
   if (!email || email.trim() === '') {
@@ -167,35 +274,62 @@ async function handleLogin(email, password) {
   
   showAuthLoading('login', true);
   
-  try {
-    const result = await firebase.auth().signInWithEmailAndPassword(email.trim(), password);
-    currentUser = result.user;
-    console.log('✅ Login bem-sucedido:', currentUser.email);
+  if (useFirebase) {
+    try {
+      const result = await firebase.auth().signInWithEmailAndPassword(email.trim(), password);
+      currentUser = result.user;
+      console.log('✅ Login bem-sucedido:', currentUser.email);
+      
+      // Check if email is verified
+      if (!currentUser.emailVerified) {
+        console.log('⚠️ E-mail não verificado, mostrando painel de verificação');
+        const verifyEmailEl = document.getElementById('verify-email-text');
+        if (verifyEmailEl) verifyEmailEl.textContent = currentUser.email;
+        showAuthForm('verify');
+        showAuthSuccess('verify', '✅ Faça login após verificar seu e-mail.');
+        return; // Don't close modal
+      }
+      
+      showAuthSuccess('login', '✅ Login realizado com sucesso! Bem-vindo!');
+      setTimeout(() => {
+        closeAuthModal();
+        updateUserProfile();
+      }, 1500);
+    } catch (error) {
+      console.error('❌ Erro no login:', error);
+      let msg = 'Erro ao fazer login';
+      if (error.code === 'auth/user-not-found') {
+        msg = '❌ Usuário não encontrado';
+      } else if (error.code === 'auth/wrong-password') {
+        msg = '❌ Senha incorreta';
+      } else if (error.message) {
+        msg = error.message;
+      }
+      showAuthError('login', msg);
+    } finally {
+      showAuthLoading('login', false);
+    }
+  } else {
+    // local login
+    const user = findLocalUser(email.trim());
+    if (!user) {
+      showAuthError('login', '❌ Usuário não encontrado');
+      showAuthLoading('login', false);
+      return;
+    }
+    if (user.password !== password) {
+      showAuthError('login', '❌ Senha incorreta');
+      showAuthLoading('login', false);
+      return;
+    }
+    setCurrentUserLocal(user);
+    currentUser = user;
+    console.log('✅ Login local bem-sucedido:', currentUser.email);
     showAuthSuccess('login', '✅ Login realizado com sucesso! Bem-vindo!');
     setTimeout(() => {
       closeAuthModal();
       updateUserProfile();
     }, 1500);
-  } catch (error) {
-    console.error('❌ Erro no login:', error);
-    let message = 'Erro ao fazer login';
-    
-    if (error.code === 'auth/user-not-found') {
-      message = '❌ E-mail não encontrado. Verifique ou crie uma nova conta.';
-    } else if (error.code === 'auth/wrong-password') {
-      message = '❌ Senha incorreta. Tente novamente ou redefina sua senha.';
-    } else if (error.code === 'auth/invalid-email') {
-      message = '❌ E-mail inválido';
-    } else if (error.code === 'auth/user-disabled') {
-      message = '❌ Conta desabilitada. Contate o suporte.';
-    } else if (error.code === 'auth/too-many-requests') {
-      message = '⚠️ Muitas tentativas. Tente novamente em alguns minutos.';
-    } else if (error.code === 'auth/invalid-credential') {
-      message = '❌ E-mail ou senha incorretos';
-    }
-    
-    showAuthError('login', message);
-  } finally {
     showAuthLoading('login', false);
   }
 }
@@ -203,10 +337,23 @@ async function handleLogin(email, password) {
 // Signup function
 async function handleSignup(name, email, phone, password, confirm) {
   console.log('🔐 handleSignup chamado', { name, email, phone });
-  if (typeof firebase === 'undefined') {
-    showAuthError('signup', '❌ Serviço indisponível. Aguarde e tente novamente.');
-    return;
+  // reevaluate firebase availability because it might have initialized late
+  useFirebase = isFirebaseAvailable();
+  // if Firebase available, use it; otherwise fallback to local storage
+  if (useFirebase) {
+    console.log('Firebase disponível, usando para cadastro');
+  } else {
+    console.log('Firebase indisponível, usando modo local');
   }
+
+  if (useFirebase) {
+    // existing firebase logic
+    if (typeof firebase === 'undefined' || !firebase.apps || firebase.apps.length === 0) {
+      showAuthError('signup', '❌ Serviço indisponível. Aguarde e tente novamente.');
+      return;
+    }
+  }
+
   // Validar nome
   if (!name || name.trim() === '') {
     showAuthError('signup', '⚠️ Por favor, insira seu nome completo');
@@ -252,83 +399,132 @@ async function handleSignup(name, email, phone, password, confirm) {
   
   showAuthLoading('signup', true);
   
-  try {
-    const result = await firebase.auth().createUserWithEmailAndPassword(email.trim(), password);
-    currentUser = result.user;
-    
-    // Update Firebase Auth profile displayName (so templates can use it)
+  if (useFirebase) {
     try {
-      if (currentUser && typeof currentUser.updateProfile === 'function') {
-        await currentUser.updateProfile({ displayName: name.trim() });
+      const result = await firebase.auth().createUserWithEmailAndPassword(email.trim(), password);
+      currentUser = result.user;
+      
+      // Update Firebase Auth profile displayName (so templates can use it)
+      try {
+        if (currentUser && typeof currentUser.updateProfile === 'function') {
+          await currentUser.updateProfile({ displayName: name.trim() });
+        }
+      } catch (updErr) {
+        console.warn('⚠️ Não foi possível atualizar displayName:', updErr);
       }
-    } catch (updErr) {
-      console.warn('⚠️ Não foi possível atualizar displayName:', updErr);
-    }
 
-    // Save user profile to Firestore
-    if (typeof firebase !== 'undefined' && firebase.firestore) {
-      const db = firebase.firestore();
-      await db.collection('users').doc(currentUser.uid).set({
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone || '',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-    
-    console.log('✅ Conta criada com sucesso:', currentUser.email);
-    showAuthSuccess('signup', '✅ Conta criada com sucesso! Enviando e-mail de verificação...');
-
-    // Send verification email and show the verify panel
-    try {
-        if (currentUser && typeof currentUser.sendEmailVerification === 'function') {
-        await currentUser.sendEmailVerification();
-        // Populate verify panel and show it via showAuthForm for consistency
-        const verifyEmailEl = document.getElementById('verify-email-text');
-        // Preferir o e-mail do usuário autenticado (mais confiável)
-        const resolvedEmail = (currentUser && currentUser.email) ? currentUser.email : (email && email.trim() ? email.trim() : '');
-        if (verifyEmailEl) verifyEmailEl.textContent = resolvedEmail;
-
-        showAuthForm('verify');
-
-        showAuthSuccess('verify', '✅ E-mail de verificação enviado! Verifique sua caixa de entrada.');
+      // Save user profile to Firestore
+      if (typeof firebase !== 'undefined') {
+        console.log('📦 firebase object at save:', firebase);
+      }
+      if (typeof firebase !== 'undefined' && firebase.firestore) {
+        const db = firebase.firestore();
+        const userData = {
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone || '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        console.log('📁 Gravando no Firestore:', userData);
+        try {
+          await db.collection('users').doc(currentUser.uid).set(userData);
+          console.log('📁 Documento de usuário criado no Firestore');
+        } catch (fsErr) {
+          console.error('❌ Erro ao salvar no Firestore:', fsErr);
+        }
       } else {
-        showAuthError('signup', '❌ Não foi possível enviar o e-mail de verificação. Faça login e solicite o reenvio.');
+        console.warn('⚠️ Firestore não disponível, pulando gravação');
       }
-    } catch (verErr) {
-      console.error('❌ Erro ao enviar e-mail de verificação:', verErr);
-      showAuthError('verify', '❌ Erro ao enviar e-mail de verificação. Tente novamente mais tarde.');
-    }
+      
+      console.log('✅ Conta criada com sucesso:', currentUser.email);
+      showAuthSuccess('signup', '✅ Conta criada com sucesso! Enviando e-mail de verificação...');
 
-    // Refresh user profile display
-    setTimeout(() => {
-      updateUserProfile();
-    }, 800);
-  } catch (error) {
-    console.error('❌ Erro ao criar conta:', error);
-    let message = 'Erro ao criar conta';
-    
-    if (error.code === 'auth/email-already-in-use') {
-      message = '❌ Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.';
-    } else if (error.code === 'auth/weak-password') {
-      message = '❌ Senha muito fraca. Use letras, números e caracteres especiais.';
-    } else if (error.code === 'auth/invalid-email') {
-      message = '❌ E-mail inválido';
-    } else if (error.code === 'auth/operation-not-allowed') {
-      message = '❌ Criação de conta não disponível no momento';
-    } else if (error.message) {
-      message = error.message;
+      // Send verification email and show the verify panel
+      try {
+          console.log('📧 Enviando email de verificação para:', currentUser.email);
+          if (currentUser && typeof currentUser.sendEmailVerification === 'function') {
+          // include actionCodeSettings so developer can control redirect
+          const actionCodeSettings = {
+            url: window.location.origin + '/auth.html?form=login',
+            handleCodeInApp: false // web flow
+          };
+          await currentUser.sendEmailVerification(actionCodeSettings);
+          console.log('📧 Email enviado com sucesso (com link)');
+          // Populate verify panel and show it via showAuthForm for consistency
+          const verifyEmailEl = document.getElementById('verify-email-text');
+          const pageVerifyEmailEl = document.getElementById('page-verify-email-text');
+          // Preferir o e-mail do usuário autenticado (mais confiável)
+          const resolvedEmail = (currentUser && currentUser.email) ? currentUser.email : (email && email.trim() ? email.trim() : '');
+          if (verifyEmailEl) verifyEmailEl.textContent = resolvedEmail;
+          if (pageVerifyEmailEl) pageVerifyEmailEl.textContent = resolvedEmail;
+
+          console.log('🔄 Chamando showAuthForm verify');
+          showAuthForm('verify');
+
+          showAuthSuccess('verify', '✅ E-mail de verificação enviado! Verifique sua caixa de entrada.');
+        } else {
+          showAuthError('signup', '❌ Não foi possível enviar o e-mail de verificação. Faça login e solicite o reenvio.');
+        }
+      } catch (verErr) {
+        console.error('❌ Erro ao enviar e-mail de verificação:', verErr);
+        showAuthError('verify', '❌ Erro ao enviar e-mail de verificação. Tente novamente mais tarde.');
+      }
+
+      // Refresh user profile display
+      setTimeout(() => {
+        updateUserProfile();
+      }, 800);
+    } catch (error) {
+      console.error('❌ Erro ao criar conta:', error);
+      let message = 'Erro ao criar conta';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        message = '❌ Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.';
+      } else if (error.code === 'auth/weak-password') {
+        message = '❌ Senha muito fraca. Use letras, números e caracteres especiais.';
+      } else if (error.code === 'auth/invalid-email') {
+        message = '❌ E-mail inválido';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        message = '❌ Criação de conta não disponível no momento';
+      } else if (error.message) {
+        message = error.message;
+      }
+      
+      showAuthError('signup', message);
+    } finally {
+      showAuthLoading('signup', false);
     }
-    
-    showAuthError('signup', message);
-  } finally {
+  } else {
+    // local fallback
+    const eTrim = email.trim();
+    if (findLocalUser(eTrim)) {
+      showAuthError('signup', '❌ Este e-mail já está cadastrado.');
+      showAuthLoading('signup', false);
+      return;
+    }
+    const localUser = { name: name.trim(), email: eTrim, phone: phone || '', password };
+    addLocalUser(localUser);
+    setCurrentUserLocal(localUser);
+    console.log('✅ Usuário local criado:', eTrim);
+    showAuthSuccess('signup', '✅ Conta criada com sucesso (local)!');
+    showAuthForm('verify');
+    const verifyEmailEl = document.getElementById('verify-email-text');
+    if (verifyEmailEl) verifyEmailEl.textContent = eTrim;
+    setTimeout(() => { updateUserProfile(); }, 800);
     showAuthLoading('signup', false);
   }
 }
 
 // Forgot password function
 async function handleForgotPassword(email) {
+  // reevaluate availability in case SDK loaded later
+  useFirebase = isFirebaseAvailable();
+  // always require Firebase; no local reset
+  if (!useFirebase) {
+    showAuthError('forgot', '❌ Recuperação apenas por e-mail. Ative o Firebase para receber o link.');
+    return;
+  }
   if (typeof firebase === 'undefined') {
     showAuthError('forgot', '❌ Serviço indisponível. Aguarde e tente novamente.');
     return;
@@ -443,7 +639,7 @@ function setupPasswordToggle() {
 
 // Event listeners setup
 function setupAuthEventListeners() {
-  console.log('🔧 Configurando event listeners...');
+  console.log('🔧 setupAuthEventListeners chamado');
   
   // Modal close button
   document.getElementById('auth-close')?.addEventListener('click', closeAuthModal);
@@ -455,6 +651,7 @@ function setupAuthEventListeners() {
   
   // Login form
   document.getElementById('login-btn')?.addEventListener('click', () => {
+    console.log('👆 login-btn clicado (modal)');
     const email = document.getElementById('login-email')?.value || '';
     const password = document.getElementById('login-password')?.value || '';
     handleLogin(email, password);
@@ -477,7 +674,9 @@ function setupAuthEventListeners() {
   });
   
   // Signup form
-  document.getElementById('signup-btn')?.addEventListener('click', () => {
+  const mSignup = document.getElementById('signup-btn');
+  console.log('🔍 modal signup-btn element:', mSignup);
+  mSignup?.addEventListener('click', () => {
     console.log('👆 signup-btn clicado');
     const name = (document.getElementById('signup-name') || {}).value || '';
     const email = (document.getElementById('signup-email') || {}).value || '';
@@ -485,6 +684,56 @@ function setupAuthEventListeners() {
     const password = (document.getElementById('signup-password') || {}).value || '';
     const confirm = (document.getElementById('signup-confirm') || {}).value || '';
     handleSignup(name, email, phone, password, confirm);
+  });
+  
+  // Page signup form (for auth.html page)
+  const pSignup = document.getElementById('page-signup-btn');
+  console.log('🔍 page signup-btn element:', pSignup);
+  pSignup?.addEventListener('click', () => {
+    console.log('👆 page-signup-btn clicado');
+    const name = document.getElementById('page-signup-name')?.value || '';
+    const email = document.getElementById('page-signup-email')?.value || '';
+    const phone = document.getElementById('page-signup-phone')?.value || '';
+    const password = document.getElementById('page-signup-password')?.value || '';
+    const confirm = document.getElementById('page-signup-confirm')?.value || '';
+    handleSignup(name, email, phone, password, confirm);
+  });
+  
+  // Page login form (for auth.html page)
+  document.getElementById('page-login-btn')?.addEventListener('click', () => {
+    console.log('👆 page-login-btn clicado');
+    const email = document.getElementById('page-login-email')?.value || '';
+    const password = document.getElementById('page-login-password')?.value || '';
+    handleLogin(email, password);
+  });
+  
+  document.getElementById('page-login-email')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const email = document.getElementById('page-login-email')?.value || '';
+      const password = document.getElementById('page-login-password')?.value || '';
+      handleLogin(email, password);
+    }
+  });
+  
+  document.getElementById('page-login-password')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const email = document.getElementById('page-login-email')?.value || '';
+      const password = document.getElementById('page-login-password')?.value || '';
+      handleLogin(email, password);
+    }
+  });
+  
+  // Page forgot password form (for auth.html page)
+  document.getElementById('page-forgot-btn')?.addEventListener('click', () => {
+    const email = document.getElementById('page-forgot-email')?.value || '';
+    handleForgotPassword(email);
+  });
+  
+  document.getElementById('page-forgot-email')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const email = document.getElementById('page-forgot-email')?.value || '';
+      handleForgotPassword(email);
+    }
   });
   
   // Forgot password form
@@ -503,47 +752,27 @@ function setupAuthEventListeners() {
   
   // Form navigation links
   document.getElementById('to-signup-link')?.addEventListener('click', (e) => {
+    console.log('🔗 to-signup-link clicado');
     e.preventDefault();
-    // If already on dedicated auth page, switch panels; otherwise navigate
-    if (location.pathname.endsWith('auth.html')) {
-      clearAuthForms();
-      showAuthForm('signup');
-    } else {
-      window.location.href = 'auth.html?form=signup';
-    }
+    openAuthModal('signup');
   });
   
   document.getElementById('to-login-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    if (location.pathname.endsWith('auth.html')) {
-      clearAuthForms();
-      showAuthForm('login');
-    } else {
-      window.location.href = 'auth.html?form=login';
-    }
+    openAuthModal('login');
   });
   
   document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    if (location.pathname.endsWith('auth.html')) {
-      clearAuthForms();
-      showAuthForm('forgot');
-    } else {
-      window.location.href = 'auth.html?form=forgot';
-    }
+    openAuthModal('forgot');
   });
   
   document.getElementById('back-to-login-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    if (location.pathname.endsWith('auth.html')) {
-      clearAuthForms();
-      showAuthForm('login');
-    } else {
-      window.location.href = 'auth.html?form=login';
-    }
+    openAuthModal('login');
   });
 
-  // Resend verification link
+  // Resend verification link (modal)
   document.getElementById('resend-verification-link')?.addEventListener('click', async (e) => {
     e.preventDefault();
     showAuthLoading('verify', true);
@@ -568,19 +797,44 @@ function setupAuthEventListeners() {
       showAuthLoading('verify', false);
     }
   });
+
+  // Resend verification link (page)
+  document.getElementById('page-resend-verification-link')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    showAuthLoading('verify', true);
+    try {
+      const user = firebase.auth().currentUser;
+      const verifyEmailEl = document.getElementById('page-verify-email-text');
+      if (verifyEmailEl && (!verifyEmailEl.textContent || verifyEmailEl.textContent.trim() === '')) {
+        const fallback = (user && user.email) ? user.email : (document.getElementById('page-signup-email')?.value || '');
+        verifyEmailEl.textContent = fallback;
+      }
+      if (user && typeof user.sendEmailVerification === 'function') {
+        await user.sendEmailVerification();
+        showAuthSuccess('verify', '✅ Link de verificação reenviado com sucesso! Verifique sua caixa de entrada.');
+      } else {
+        showAuthError('verify', '❌ Usuário não autenticado. Faça login e tente novamente.');
+      }
+    } catch (err) {
+      console.error('❌ Erro ao reenviar verificação (página):', err);
+      showAuthError('verify', '❌ Não foi possível reenviar o link. Tente novamente mais tarde.');
+    } finally {
+      showAuthLoading('verify', false);
+    }
+  });
   
   // User profile button
   const userBtn = document.getElementById('user-btn');
   console.log('🔘 User button encontrado:', userBtn ? 'SIM' : 'NÃO');
-  userBtn?.addEventListener('click', () => {
+  userBtn?.addEventListener('click', (e) => {
+    e.preventDefault(); // Prevent navigation
     console.log('🔘 User button clicado! currentUser:', currentUser);
     if (currentUser) {
       if (confirm(`Fazer logout de ${currentUser.email}?`)) {
         handleLogout();
       }
     } else {
-      // Navigate to dedicated auth page
-      window.location.href = 'auth.html?form=login';
+      openAuthModal('login');
     }
   });
   
@@ -592,31 +846,50 @@ function setupAuthEventListeners() {
 
 // Initialize authentication when Firebase is ready
 function initializeAuth() {
-  console.log('⏳ Inicializando autenticação...');
-  console.log('📡 Firebase disponível:', typeof firebase !== 'undefined' ? 'SIM' : 'NÃO');
+  console.log('⏳ initializeAuth chamado');
+  // Bootstrap: read ?form= and show the right panel for page auth
+  const url = new URL(window.location.href);
+  const form = (url.searchParams.get('form') || 'login').toLowerCase();
+  document.getElementById('page-login').style.display = 'none';
+  document.getElementById('page-signup').style.display = 'none';
+  document.getElementById('page-forgot').style.display = 'none';
+  if(form === 'signup') document.getElementById('page-signup').style.display = 'block';
+  else if(form === 'forgot') document.getElementById('page-forgot').style.display = 'block';
+  else document.getElementById('page-login').style.display = 'block';
   
-  if (typeof firebase === 'undefined') {
-    console.log('⏳ Firebase ainda não carregou, tentando novamente em 500ms...');
+  // re-evaluate firebase availability each time
+  useFirebase = isFirebaseAvailable();
+  console.log('📡 Firebase disponível?', useFirebase ? 'SIM' : 'NÃO');
+
+  // if firebase script is present but not yet initialized, retry until apps array fills
+  if (typeof firebase !== 'undefined' && (!firebase.apps || firebase.apps.length === 0)) {
+    console.log('⏳ Firebase presente mas ainda não inicializado, tentando novamente em 500ms...');
     setTimeout(initializeAuth, 500);
     return;
   }
-  
-  setupAuthEventListeners();
-  
-  // Listen for auth state changes
-  firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-      currentUser = user;
-      console.log('✅ Usuário autenticado:', user.email);
-      updateUserProfile();
-    } else {
-      currentUser = null;
-      console.log('ℹ️ Usuário não autenticado');
-      updateUserProfile();
-    }
-  });
-  
-  console.log('✅ Sistema de autenticação inicializado com sucesso');
+
+  // always attach event listeners once
+  if (!listenersAttached) {
+    setupAuthEventListeners();
+    listenersAttached = true;
+  }
+
+  if (useFirebase) {
+    // migrate local users if this is the first time
+    migrateLocalUsersToFirebase().catch(()=>{});
+  }
+
+  if (!useFirebase) {
+    console.log('⚠️ Inicializando modo local (Firebase indisponível)');
+    loadCurrentUserLocal();
+    updateUserProfile();
+    console.log('✅ Sistema de autenticação local inicializado');
+  } else {
+    // Firebase is available and initialized
+    loadCurrentUserLocal(); // keep any existing local user for fallback
+    updateUserProfile();
+    console.log('✅ Sistema de autenticação inicializado com sucesso');
+  }
 }
 
 // Initialize when DOM is ready
