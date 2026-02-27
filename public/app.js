@@ -43,7 +43,16 @@ let pendingAddId = null;
 
 // helper to get size options for a product
 function getSizeOptions(prod){
+  // if explicit sizes provided, return a copy
   if(prod && prod.sizes && prod.sizes.length) return prod.sizes.slice();
+  // attempt to guess numeric sizes for footwear categories
+  const cat = (prod && prod.category) ? prod.category.toLowerCase() : '';
+  const id = (prod && prod.id) ? prod.id.toLowerCase() : '';
+  if(cat.includes('sneaker') || cat.includes('shoe') || id.startsWith('shoe-')){
+    // common Brazilian shoe range (adjust if needed)
+    return ['36','37','38','39','40','41','42','43','44','45'];
+  }
+  // default for apparel
   return ['P','M','G','GG'];
 }
 
@@ -52,12 +61,30 @@ async function migrateProductsToFirestore() {
   if (!(window.firebase && firebase.apps && firebase.apps.length)) return;
   try {
     const db = firebase.firestore();
-    const snapshot = await db.collection('products').limit(1).get();
-    if (!snapshot.empty) return; // already has data
-    for (const p of DEFAULT_PRODUCTS) {
-      await db.collection('products').doc(p.id).set(p);
+    const snapshot = await db.collection('products').get();
+    if (snapshot.empty) {
+      // populate collection from default list
+      for (const p of DEFAULT_PRODUCTS) {
+        await db.collection('products').doc(p.id).set(p);
+      }
+      console.log('⚙️ Produtos padrão migrados para Firestore');
+    } else {
+      // ensure shoe documents have a sizes array (might have been omitted earlier)
+      const updates = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if((data.category && data.category.toLowerCase().includes('sneaker')) ||
+           (doc.id && doc.id.toLowerCase().startsWith('shoe-'))){
+          if(!data.sizes || !data.sizes.length){
+            updates.push(db.collection('products').doc(doc.id).update({
+              sizes: getSizeOptions(data) // will return numeric range
+            }));
+          }
+        }
+      });
+      if(updates.length) await Promise.all(updates);
+      if(updates.length) console.log('⚙️ Atualizados tamanhos de calçados no Firestore');
     }
-    console.log('⚙️ Produtos padrão migrados para Firestore');
   } catch (err) {
     console.warn('⚠️ Erro ao migrar produtos para Firestore:', err);
   }

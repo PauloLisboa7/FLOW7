@@ -16,12 +16,11 @@
     <header class="site-header">
 
       <a href="index.html#products"><img src="flow7%20logo.png" alt="FLOW7" class="logo" /></a>
-      <button id="cart-btn" class="cart-btn" title="Carrinho">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
-          <circle cx="9" cy="21" r="1"></circle>
-          <circle cx="20" cy="21" r="1"></circle>
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-        </svg>
+      <button id="cart-btn" class="cart-btn" title="Carrinho" aria-label="Carrinho">
+        <!-- use an <img> so older Android/webview render the icon reliably -->
+        <img src="images/cart.svg" alt="" class="cart-icon" />
+        <!-- fallback text will only be shown if the image/SVG fails to load -->
+        <span class="visually-hidden">Carrinho</span>
         <span id="cart-count" class="cart-badge">0</span>
       </button>
     </header>
@@ -51,11 +50,8 @@
             <div class="size-row">
               <label for="product-size" style="font-size:14px;display:block;margin:8px 0 4px;color:#e6e6e6">Tamanho</label>
               <select id="product-size" style="width:100%;padding:8px;border-radius:8px;border:1px solid #222;background:#111;color:#e6e6e6;font-size:16px">
+                <!-- options populated via JS; initial placeholder only -->
                 <option value="" style="background:#111;color:#e6e6e6">Escolha</option>
-                <option value="P" style="background:#111;color:#e6e6e6">P</option>
-                <option value="M" style="background:#111;color:#e6e6e6">M</option>
-                <option value="G" style="background:#111;color:#e6e6e6">G</option>
-                <option value="GG" style="background:#111;color:#e6e6e6">GG</option>
               </select>
             </div>
             <button id="product-add" class="add">Adicionar ao carrinho</button>
@@ -71,11 +67,8 @@
         <h3 style="color:var(--accent);text-align:center;margin-top:0">Escolha um tamanho</h3>
         <div class="size-row" style="margin:12px 0">
           <select id="size-select" style="width:100%;padding:8px;border-radius:8px;border:1px solid #222;background:#111;color:#e6e6e6;font-size:16px">
+            <!-- dynamically filled with getSizeOptions -->
             <option value="" style="background:#111;color:#e6e6e6">Escolha</option>
-            <option value="P" style="background:#111;color:#e6e6e6">P</option>
-            <option value="M" style="background:#111;color:#e6e6e6">M</option>
-            <option value="G" style="background:#111;color:#e6e6e6">G</option>
-            <option value="GG" style="background:#111;color:#e6e6e6">GG</option>
           </select>
         </div>
         <button id="size-confirm" class="add" style="width:100%">Adicionar</button>
