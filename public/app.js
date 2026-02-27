@@ -30,8 +30,18 @@ const DEFAULT_PRODUCTS = [
 ];
 
 const CART_KEY = 'flow7_cart_v1';
-const COUPON_CODE = 'ALMICEA';
-const COUPON_DISCOUNT = 0.30; // 30% off when the valid coupon is applied
+// coupon codes and their respective discounts (fractional)
+const COUPONS = {
+  ALMICEA: 0.30, // 30% off
+  SENAC: 0.25    // new 25% off code
+};
+
+// helper to look up discount percentage by code
+function getCouponDiscount(code){
+  if(!code) return 0;
+  const upper = code.trim().toUpperCase();
+  return COUPONS[upper] || 0;
+}
 
 let state = {
   cart: loadCart(),
@@ -335,10 +345,11 @@ function renderCart(){
 
 function updateSummary(){
   const subtotal = state.cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const discount = state.coupon ? subtotal * COUPON_DISCOUNT : 0;
+  const discountPct = getCouponDiscount(state.coupon);
+  const discount = subtotal * discountPct;
   const total = subtotal - discount;
   document.getElementById('subtotal').textContent = formatPrice(subtotal);
-  document.getElementById('discount').textContent = state.coupon ? `-${formatPrice(discount)}` : '0,00';
+  document.getElementById('discount').textContent = discountPct ? `-${formatPrice(discount)}` : '0,00';
   document.getElementById('total').textContent = formatPrice(total);
 }
 
@@ -346,10 +357,11 @@ function applyCoupon(){
   const input = document.getElementById('coupon-input');
   const msg = document.getElementById('coupon-msg');
   const code = input.value.trim().toUpperCase();
-  if(code === COUPON_CODE){
-    state.coupon = COUPON_CODE;
+  const discount = getCouponDiscount(code);
+  if(discount > 0){
+    state.coupon = code;
     input.value = '';
-    msg.textContent = 'Cupom aplicado com sucesso!';
+    msg.textContent = `Cupom ${code} aplicado com sucesso!`;
     msg.className = 'coupon-msg success';
     updateSummary();
     setTimeout(()=>{ msg.textContent = ''; msg.className = 'coupon-msg'; }, 3000);

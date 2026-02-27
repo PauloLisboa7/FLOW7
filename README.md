@@ -5,7 +5,9 @@ Pequeno site mobile-first estático com catálogo, carrinho, cupom e mensagem de
 Características implementadas:
 - Catálogo com produtos Nike e Adidas (exemplos)
 - Carrinho com quantidade e persistência em `localStorage`
-- Cupom `ALMICEA` que aplica 20% de desconto
+- Cupons disponíveis:
+  - `ALMICEA` → 30% de desconto
+  - `SENAC` → 25% de desconto
 - Ao finalizar a compra exibe: **OBRIGADO POR ASSISTIR A NOSSA APRESENTAÇÃO.**
 
 Arquivos principais:
